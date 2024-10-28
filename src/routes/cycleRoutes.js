@@ -1,62 +1,63 @@
-// src/routes/cycleRoutes.js
 const express = require("express");
 const router = express.Router();
 const cycleController = require("../controllers/CycleController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware");
+const loggingMiddleware = require("../middlewares/loggingMiddleware");
+const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
 const { body } = require("express-validator");
 
-// Routes for cycle management
+// Get all cycles
+router.get(
+  "/all",
+  authMiddleware,auditLogMiddleware,
+  permissionMiddleware(["view_cycles"]),
+  loggingMiddleware,
+  cycleController.getCycles
+);
 
 // Create a new cycle
 router.post(
-  "/",
-  authMiddleware,
+  "/create",
+  authMiddleware,auditLogMiddleware,
   permissionMiddleware(["create_cycles"]),
+  loggingMiddleware,
   [
-    body("name").notEmpty().withMessage("Cycle name is required"),
-    body("startDate").isISO8601().withMessage("Valid start date is required"),
-    body("endDate").isISO8601().withMessage("Valid end date is required"),
-    body("budget").notEmpty().withMessage("Budget is required"),
+    body("name").notEmpty().withMessage("Name is required"),
+    body("startDate")
+      .isISO8601()
+      .withMessage("Start date must be a valid date"),
+    body("endDate").isISO8601().withMessage("End date must be a valid date"),
+    body("budget").notEmpty().withMessage("Budget ID is required"),
   ],
   cycleController.createCycle
 );
 
-// Get all cycles
-router.get(
-  "/",
-  authMiddleware,
-  permissionMiddleware(["view_cycles"]),
-  cycleController.getCycles
-);
-
-// Update a cycle by ID
+// Update a cycle
 router.put(
-  "/:cycleId",
-  authMiddleware,
+  "/update/:cycleId",
+  authMiddleware,auditLogMiddleware,
   permissionMiddleware(["edit_cycles"]),
+  loggingMiddleware,
   [
-    body("name")
-      .optional()
-      .notEmpty()
-      .withMessage("Cycle name cannot be empty"),
     body("startDate")
       .optional()
       .isISO8601()
-      .withMessage("Valid start date is required"),
+      .withMessage("Start date must be a valid date"),
     body("endDate")
       .optional()
       .isISO8601()
-      .withMessage("Valid end date is required"),
+      .withMessage("End date must be a valid date"),
   ],
   cycleController.updateCycle
 );
 
-// Delete a cycle by ID
+// Delete a cycle
 router.delete(
-  "/:cycleId",
-  authMiddleware,
+  "/delete/:cycleId",
+  authMiddleware,auditLogMiddleware,
   permissionMiddleware(["delete_cycles"]),
+  loggingMiddleware,
   cycleController.deleteCycle
 );
 

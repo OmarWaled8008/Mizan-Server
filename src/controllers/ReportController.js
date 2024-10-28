@@ -1,68 +1,90 @@
-// src/controllers/ReportController.js
-const Report = require("../models/Report");
+// // src/controllers/ReportController.js
+// const Report = require("../models/Report");
+// const Budget = require("../models/Budget");
+// const Expense = require("../models/Expense");
+// const Transfer = require("../models/Transfer");
+// const AdministrativeUnit = require("../models/AdministrativeUnit");
+// const { Parser } = require("json2csv");
 
-// إنشاء تقرير جديد
-exports.createReport = async (req, res) => {
-  try {
-    const { reportName, type, date, user, fileUrl } = req.body;
-    const newReport = new Report({ reportName, type, date, user, fileUrl });
-    await newReport.save();
-    res
-      .status(201)
-      .json({ message: "Report created successfully", report: newReport });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error creating report", error: error.message });
-  }
-};
+// // Get all reports
+// exports.getAllReports = async (req, res) => {
+//   try {
+//     const reports = await Report.find().populate("generatedBy");
+//     res.status(200).json(reports);
+//   } catch (error) {
+//     console.error("Error fetching reports:", error);
+//     res.status(500).json({ error: "Error fetching reports" });
+//   }
+// };
 
-// عرض جميع التقارير
-exports.getReports = async (req, res) => {
-  try {
-    const reports = await Report.find().populate("user");
-    res.status(200).json(reports);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching reports", error: error.message });
-  }
-};
+// // Generate a new report
+// exports.generateReport = async (req, res) => {
+//   try {
+//     const { title, type, filters } = req.body;
 
-// تحديث تقرير
-exports.updateReport = async (req, res) => {
-  try {
-    const { reportId } = req.params;
-    const updates = req.body;
+//     let data = [];
+//     switch (type) {
+//       case "budget":
+//         data = await Budget.find();
+//         break;
+//       case "expense":
+//         data = await Expense.find().populate("budget").populate("cycle");
+//         break;
+//       case "transfer":
+//         data = await Transfer.find();
+//         break;
+//       case "administrative":
+//         data = await AdministrativeUnit.find();
+//         break;
+//       case "all":
+//         data = {
+//           budgets: await Budget.find(),
+//           expenses: await Expense.find().populate("budget").populate("cycle"),
+//           transfers: await Transfer.find(),
+//           administrativeUnits: await AdministrativeUnit.find(),
+//         };
+//         break;
+//       default:
+//         return res.status(400).json({ error: "Invalid report type" });
+//     }
 
-    const updatedReport = await Report.findByIdAndUpdate(reportId, updates, {
-      new: true,
-    }).populate("user");
+//     const newReport = new Report({
+//       title,
+//       type,
+//       filters,
+//       generatedBy: req.user._id,
+//       data,
+//     });
+//     await newReport.save();
 
-    if (!updatedReport)
-      return res.status(404).json({ message: "Report not found" });
+//     res.status(201).json({
+//       message: "Report generated successfully",
+//       report: newReport,
+//     });
+//   } catch (error) {
+//     console.error("Error generating report:", error);
+//     res.status(500).json({ error: "Error generating report" });
+//   }
+// };
 
-    res.json({ message: "Report updated successfully", report: updatedReport });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating report", error: error.message });
-  }
-};
+// // Download report as CSV
+// exports.downloadReport = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const report = await Report.findById(id);
 
-// حذف تقرير
-exports.deleteReport = async (req, res) => {
-  try {
-    const { reportId } = req.params;
-    const deletedReport = await Report.findByIdAndDelete(reportId);
+//     if (!report) {
+//       return res.status(404).json({ error: "Report not found" });
+//     }
 
-    if (!deletedReport)
-      return res.status(404).json({ message: "Report not found" });
+//     const json2csvParser = new Parser();
+//     const csv = json2csvParser.parse(report.data);
 
-    res.json({ message: "Report deleted successfully" });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error deleting report", error: error.message });
-  }
-};
+//     res.header("Content-Type", "text/csv");
+//     res.attachment(`${report.title}.csv`);
+//     res.send(csv);
+//   } catch (error) {
+//     console.error("Error downloading report:", error);
+//     res.status(500).json({ error: "Error downloading report" });
+//   }
+// };

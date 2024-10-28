@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Role = require("../models/Role");
 const Permission = require("../models/Permission");
+const Notification = require("../models/Notification"); // استيراد موديل الإشعارات
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
@@ -62,6 +63,15 @@ const createUser = async (req, res) => {
     });
     await user.save();
 
+    // إنشاء إشعار عند إضافة مستخدم جديد
+    const notification = new Notification({
+      user: req.user ? req.user._id : user._id,
+      message: `New user "${name}" has been created.`,
+      type: "User", // تأكد أن هذه القيمة تتوافق مع القيم في الـ schema
+      referenceId: user._id,
+    });
+    await notification.save();
+
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
       expiresIn: "1h",
     });
@@ -116,6 +126,15 @@ const updateUser = async (req, res) => {
 
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
 
+    // إنشاء إشعار عند تحديث المستخدم
+    const notification = new Notification({
+      user: req.user._id,
+      message: `User "${updatedUser.name}" has been updated.`,
+      type: "User",
+      referenceId: updatedUser._id,
+    });
+    await notification.save();
+
     res.json({ message: "User updated successfully", updatedUser });
   } catch (error) {
     console.error("Update user error:", error.message);
@@ -130,6 +149,15 @@ const deleteUser = async (req, res) => {
     const deletedUser = await User.findByIdAndDelete(id).select("-password");
 
     if (!deletedUser) return res.status(404).json({ error: "User not found" });
+
+    // إنشاء إشعار عند حذف المستخدم
+    const notification = new Notification({
+      user: req.user._id,
+      message: `User "${deletedUser.name}" has been deleted.`,
+      type: "User",
+      referenceId: deletedUser._id,
+    });
+    await notification.save();
 
     res.json({ message: "User deleted successfully" });
   } catch (error) {

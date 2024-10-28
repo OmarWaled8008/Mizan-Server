@@ -1,27 +1,30 @@
+// src/models/Notification.js
 const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema(
   {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    message: { type: String, required: true },
     type: {
       type: String,
-      enum: ["info", "warning", "alert", "reminder"],
-      default: "info",
-    },
-    message: { type: String, required: true },
-    recipient: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      enum: [
+        "User",
+        "Role",
+        "Permission",
+        "AdministrativeUnit",
+        "Budget",
+        "Expense",
+        "Transfer",
+        "Report",
+      ],
       required: true,
     },
-    relatedEntity: {
-      type: mongoose.Schema.Types.ObjectId,
-      refPath: "entityModel",
-    },
-    entityModel: {
+    status: {
       type: String,
-      enum: ["Expense", "Cycle", "Budget"],
+      enum: ["unread", "read"],
+      default: "unread",
     },
-    read: { type: Boolean, default: false },
+    referenceId: { type: mongoose.Schema.Types.ObjectId, required: true },
   },
   { timestamps: true }
 );

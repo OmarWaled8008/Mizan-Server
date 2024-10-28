@@ -1,44 +1,11 @@
-// src/controllers/NotificationController.js
 const Notification = require("../models/Notification");
-const { validationResult } = require("express-validator");
 
-// إنشاء إشعار جديد
-exports.createNotification = async (req, res) => {
+// Get all notifications for a user
+exports.getUserNotifications = async (req, res) => {
   try {
-    const { type, message, recipient, relatedEntity, entityModel } = req.body;
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const newNotification = new Notification({
-      type,
-      message,
-      recipient,
-      relatedEntity,
-      entityModel,
-    });
-
-    await newNotification.save();
-    res.status(201).json({
-      message: "Notification created successfully",
-      notification: newNotification,
-    });
-  } catch (error) {
-    console.error("Error creating notification:", error);
-    res.status(500).json({ error: "Error creating notification" });
-  }
-};
-
-// عرض جميع الإشعارات للمستخدم
-exports.getNotificationsByUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const notifications = await Notification.find({ recipient: userId }).sort({
+    const notifications = await Notification.find({ user: req.user._id }).sort({
       createdAt: -1,
     });
-
     res.status(200).json(notifications);
   } catch (error) {
     console.error("Error fetching notifications:", error);
@@ -46,44 +13,30 @@ exports.getNotificationsByUser = async (req, res) => {
   }
 };
 
-// تحديث حالة القراءة للإشعار
+// Mark notification as read
 exports.markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
 
-    const updatedNotification = await Notification.findByIdAndUpdate(
-      notificationId,
-      { read: true },
-      { new: true }
-    );
-
-    if (!updatedNotification)
-      return res.status(404).json({ error: "Notification not found" });
-
-    res.status(200).json({
-      message: "Notification marked as read",
-      notification: updatedNotification,
+    // البحث عن الإشعار والتحقق من أنه يخص المستخدم الحالي
+    const notification = await Notification.findOne({
+      _id: notificationId,
+      user: req.user._id,
     });
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    // تحديث حالة الإشعار إلى "read"
+    notification.status = "read";
+    await notification.save();
+
+    res
+      .status(200)
+      .json({ message: "Notification marked as read", notification });
   } catch (error) {
     console.error("Error marking notification as read:", error);
     res.status(500).json({ error: "Error marking notification as read" });
-  }
-};
-
-// حذف إشعار
-exports.deleteNotification = async (req, res) => {
-  try {
-    const { notificationId } = req.params;
-    const deletedNotification = await Notification.findByIdAndDelete(
-      notificationId
-    );
-
-    if (!deletedNotification)
-      return res.status(404).json({ error: "Notification not found" });
-
-    res.status(200).json({ message: "Notification deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting notification:", error);
-    res.status(500).json({ error: "Error deleting notification" });
   }
 };

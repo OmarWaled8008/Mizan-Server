@@ -1,45 +1,48 @@
-// src/routes/administrativeUnitRoutes.js
 const express = require("express");
 const router = express.Router();
-const administrativeUnitController = require("../controllers/AdministrativeUnitController");
+const adminUnitController = require("../controllers/AdministrativeUnitController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware");
+const loggingMiddleware = require("../middlewares/loggingMiddleware");
+const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
 const { body } = require("express-validator");
-
-// Routes for administrative unit management
-
-// Create a new administrative unit
-router.post(
-  "/",
-  authMiddleware,
-  permissionMiddleware(["create_administrative_units"]),
-  [body("name").notEmpty().withMessage("Unit name is required")],
-  administrativeUnitController.createUnit
-);
 
 // Get all administrative units
 router.get(
-  "/",
-  authMiddleware,
+  "/all",
+  authMiddleware,auditLogMiddleware,
   permissionMiddleware(["view_administrative_units"]),
-  administrativeUnitController.getUnits
+  loggingMiddleware,
+  adminUnitController.getUnits
 );
 
-// Update an administrative unit by ID
+// Create a new administrative unit
+router.post(
+  "/create",
+  authMiddleware,auditLogMiddleware,
+  permissionMiddleware(["create_administrative_units"]),
+  loggingMiddleware,
+  [body("name").notEmpty().withMessage("Name is required")],
+  adminUnitController.createUnit
+);
+
+// Update an administrative unit
 router.put(
-  "/:unitId",
-  authMiddleware,
+  "/update/:unitId",
+  authMiddleware,auditLogMiddleware,
   permissionMiddleware(["edit_administrative_units"]),
-  [body("name").optional().notEmpty().withMessage("Unit name cannot be empty")],
-  administrativeUnitController.updateUnit
+  loggingMiddleware,
+  [body("name").optional().notEmpty().withMessage("Name cannot be empty")],
+  adminUnitController.updateUnit
 );
 
-// Delete an administrative unit by ID
+// Delete an administrative unit
 router.delete(
-  "/:unitId",
-  authMiddleware,
+  "/delete/:unitId",
+  authMiddleware,auditLogMiddleware,
   permissionMiddleware(["delete_administrative_units"]),
-  administrativeUnitController.deleteUnit
+  loggingMiddleware,
+  adminUnitController.deleteUnit
 );
 
 module.exports = router;

@@ -1,3 +1,4 @@
+// models/Expense.js
 const mongoose = require("mongoose");
 
 const expenseSchema = new mongoose.Schema(
@@ -14,6 +15,11 @@ const expenseSchema = new mongoose.Schema(
     budget: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Budget",
+      required: true,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
     description: { type: String },

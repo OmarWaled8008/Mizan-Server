@@ -1,3 +1,4 @@
+// src/middlewares/permissionMiddleware.js
 const permissionMiddleware = (requiredPermissions, checkAll = false) => {
   return async (req, res, next) => {
     try {
@@ -8,10 +9,11 @@ const permissionMiddleware = (requiredPermissions, checkAll = false) => {
 
       console.log("Checking permissions for user:", req.user._id);
 
-      // جلب الصلاحيات الخاصة بالمستخدم كأسماء
+      // جلب الصلاحيات الخاصة بالمستخدم
       const userPermissions = await req.user.getCombinedPermissions();
-      console.log("User permissions (Names):", userPermissions);
-      console.log("Required permissions (Names):", requiredPermissions);
+
+      console.log("User permissions:", userPermissions);
+      console.log("Required permissions:", requiredPermissions);
 
       // التحقق إذا كان المستخدم لديه صلاحية "admin" لتجاوز التحقق من الصلاحيات الأخرى
       if (userPermissions.includes("admin")) {

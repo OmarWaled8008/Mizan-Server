@@ -1,10 +1,17 @@
-// src/controllers/CycleController.js
 const Cycle = require("../models/Cycle");
+const Budget = require("../models/Budget");
 
 // إنشاء دورة جديدة
 exports.createCycle = async (req, res) => {
   try {
     const { name, startDate, endDate, budget, description } = req.body;
+
+    // التحقق من وجود الـ budget
+    const foundBudget = await Budget.findById(budget);
+    if (!foundBudget) {
+      return res.status(404).json({ message: "Budget not found" });
+    }
+
     const newCycle = new Cycle({
       name,
       startDate,
@@ -12,6 +19,7 @@ exports.createCycle = async (req, res) => {
       budget,
       description,
     });
+
     await newCycle.save();
     res
       .status(201)
@@ -39,14 +47,24 @@ exports.getCycles = async (req, res) => {
 exports.updateCycle = async (req, res) => {
   try {
     const { cycleId } = req.params;
-    const updates = req.body;
+    const { budget, ...updates } = req.body;
+
+    // التحقق من وجود الـ budget إذا كانت موجودة في التحديث
+    if (budget) {
+      const foundBudget = await Budget.findById(budget);
+      if (!foundBudget) {
+        return res.status(404).json({ message: "Budget not found" });
+      }
+      updates.budget = budget;
+    }
 
     const updatedCycle = await Cycle.findByIdAndUpdate(cycleId, updates, {
       new: true,
     }).populate("budget");
 
-    if (!updatedCycle)
+    if (!updatedCycle) {
       return res.status(404).json({ message: "Cycle not found" });
+    }
 
     res.json({ message: "Cycle updated successfully", cycle: updatedCycle });
   } catch (error) {
@@ -62,8 +80,9 @@ exports.deleteCycle = async (req, res) => {
     const { cycleId } = req.params;
     const deletedCycle = await Cycle.findByIdAndDelete(cycleId);
 
-    if (!deletedCycle)
+    if (!deletedCycle) {
       return res.status(404).json({ message: "Cycle not found" });
+    }
 
     res.json({ message: "Cycle deleted successfully" });
   } catch (error) {

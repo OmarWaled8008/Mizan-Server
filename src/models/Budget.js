@@ -10,22 +10,15 @@ const budgetSchema = new mongoose.Schema(
     fiscalYear: { type: String, required: true },
     initialAmount: { type: Number, required: true },
     spentAmount: { type: Number, default: 0 },
+    approvedAmount: { type: Number, default: 0 },
     description: { type: String },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    approvalDate: { type: Date },
   },
   { timestamps: true }
 );

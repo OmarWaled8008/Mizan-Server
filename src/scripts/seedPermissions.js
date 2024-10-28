@@ -1,11 +1,12 @@
-// src/seed/seedPermissions.js
 const mongoose = require("mongoose");
 const Permission = require("../models/Permission");
 const dotenv = require("dotenv");
 
 dotenv.config();
 
+// القائمة المعدلة للصلاحيات
 const permissions = [
+  // صلاحيات المستخدمين
   {
     name: "view_users",
     description: "عرض قائمة بجميع المستخدمين",
@@ -28,10 +29,14 @@ const permissions = [
     description: "إدارة الصلاحيات للمستخدمين والأدوار",
     category: "user",
   },
+
+  // صلاحيات الأدوار
   { name: "view_roles", description: "عرض جميع الأدوار", category: "role" },
   { name: "create_roles", description: "إنشاء أدوار جديدة", category: "role" },
   { name: "edit_roles", description: "تعديل تفاصيل الأدوار", category: "role" },
   { name: "delete_roles", description: "حذف الأدوار", category: "role" },
+
+  // صلاحيات الصلاحيات (Permissions)
   {
     name: "view_permissions",
     description: "عرض جميع الصلاحيات",
@@ -42,6 +47,8 @@ const permissions = [
     description: "تعيين الصلاحيات للأدوار",
     category: "permission",
   },
+
+  // صلاحيات التقارير
   {
     name: "view_reports",
     description: "الوصول إلى التقارير وعرضها",
@@ -54,6 +61,33 @@ const permissions = [
   },
   { name: "edit_reports", description: "تعديل التقارير", category: "report" },
   { name: "delete_reports", description: "حذف التقارير", category: "report" },
+  {
+    name: "export_reports",
+    description: "تصدير التقارير وتنزيلها بصيغة CSV",
+    category: "report",
+  },
+  {
+    name: "view_all_reports",
+    description: "مشاهدة جميع التقارير النظامية",
+    category: "report",
+  },
+  {
+    name: "view_department_reports",
+    description: "مشاهدة التقارير الخاصة بالأقسام",
+    category: "report",
+  },
+  {
+    name: "view_financial_reports",
+    description: "مشاهدة التقارير المالية مثل المصروفات والميزانيات",
+    category: "report",
+  },
+  {
+    name: "view_overview_reports",
+    description: "مشاهدة التقارير الشاملة التي تغطي كل النظام",
+    category: "report",
+  },
+
+  // صلاحيات الميزانيات
   { name: "view_budgets", description: "عرض الميزانيات", category: "budget" },
   {
     name: "create_budgets",
@@ -71,6 +105,8 @@ const permissions = [
     description: "الموافقة على أو رفض الميزانيات",
     category: "budget",
   },
+
+  // صلاحيات المصروفات
   { name: "view_expenses", description: "عرض المصروفات", category: "expense" },
   {
     name: "create_expenses",
@@ -87,6 +123,8 @@ const permissions = [
     description: "حذف المصروفات",
     category: "expense",
   },
+
+  // صلاحيات التحويلات
   {
     name: "view_transfers",
     description: "عرض التحويلات",
@@ -112,6 +150,8 @@ const permissions = [
     description: "حذف التحويلات",
     category: "transfer",
   },
+
+  // صلاحيات الوحدات الإدارية
   {
     name: "view_administrative_units",
     description: "عرض الوحدات الإدارية",
@@ -132,6 +172,8 @@ const permissions = [
     description: "حذف الوحدات الإدارية",
     category: "administrative_unit",
   },
+
+  // صلاحيات النظام
   {
     name: "manage_settings",
     description: "الوصول إلى إعدادات النظام وتعديلها",
@@ -157,11 +199,7 @@ const permissions = [
     description: "مراقبة حالة وصحة النظام",
     category: "system",
   },
-  {
-    name: "admin",
-    description: "يملك كافة الصلاحيات",
-    category: "system",
-  },
+  { name: "admin", description: "يملك كافة الصلاحيات", category: "system" },
 ];
 
 mongoose

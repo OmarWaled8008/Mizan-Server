@@ -1,10 +1,48 @@
-// src/controllers/TransferController.js
-const Transfer = require("../models/Transfer ");
+const Transfer = require("../models/Transfer");
+const Budget = require("../models/Budget");
+const AdministrativeUnit = require("../models/AdministrativeUnit");
 
-// إنشاء تحويل جديد
+// Get all transfers
+exports.getAllTransfers = async (req, res) => {
+  try {
+    const transfers = await Transfer.find()
+      .populate("sourceUnit")
+      .populate("destinationUnit")
+      .populate("approvedBy");
+    res.status(200).json(transfers);
+  } catch (error) {
+    console.error("Error fetching transfers:", error);
+    res.status(500).json({ error: "Error fetching transfers" });
+  }
+};
+
+// Create a new transfer
 exports.createTransfer = async (req, res) => {
   try {
     const { sourceUnit, destinationUnit, amount, date, description } = req.body;
+
+    // التحقق من أن الوحدتين الإداريتين موجودتين
+    const sourceUnitExists = await AdministrativeUnit.findById(sourceUnit);
+    const destinationUnitExists = await AdministrativeUnit.findById(
+      destinationUnit
+    );
+
+    if (!sourceUnitExists || !destinationUnitExists) {
+      return res
+        .status(404)
+        .json({ error: "Source or destination unit not found" });
+    }
+
+    // التحقق من أن الميزانية للوحدة المرسلة تكفي للمبلغ المحول
+    const sourceBudget = await Budget.findOne({
+      administrativeUnit: sourceUnit,
+    });
+    if (!sourceBudget || sourceBudget.initialAmount < amount) {
+      return res
+        .status(400)
+        .json({ error: "Insufficient funds in the source unit's budget" });
+    }
+
     const newTransfer = new Transfer({
       sourceUnit,
       destinationUnit,
@@ -13,74 +51,80 @@ exports.createTransfer = async (req, res) => {
       description,
     });
     await newTransfer.save();
-    res
-      .status(201)
-      .json({
-        message: "Transfer created successfully",
-        transfer: newTransfer,
-      });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error creating transfer", error: error.message });
-  }
-};
 
-// عرض جميع التحويلات
-exports.getTransfers = async (req, res) => {
-  try {
-    const transfers = await Transfer.find()
-      .populate("sourceUnit")
-      .populate("destinationUnit");
-    res.status(200).json(transfers);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching transfers", error: error.message });
-  }
-};
-
-// تحديث تحويل
-exports.updateTransfer = async (req, res) => {
-  try {
-    const { transferId } = req.params;
-    const updates = req.body;
-
-    const updatedTransfer = await Transfer.findByIdAndUpdate(
-      transferId,
-      updates,
-      { new: true }
-    )
-      .populate("sourceUnit")
-      .populate("destinationUnit");
-
-    if (!updatedTransfer)
-      return res.status(404).json({ message: "Transfer not found" });
-
-    res.json({
-      message: "Transfer updated successfully",
-      transfer: updatedTransfer,
+    res.status(201).json({
+      message: "Transfer created successfully",
+      transfer: newTransfer,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating transfer", error: error.message });
+    console.error("Error creating transfer:", error);
+    res.status(500).json({ error: "Error creating transfer" });
   }
 };
 
-// حذف تحويل
+// Update transfer status (approve/reject)
+exports.updateTransferStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+
+    const transfer = await Transfer.findById(id)
+      .populate("sourceUnit")
+      .populate("destinationUnit");
+
+    if (!transfer) {
+      return res.status(404).json({ error: "Transfer not found" });
+    }
+
+    // تحديث حالة التحويل
+    transfer.status = status;
+    transfer.approvedBy = req.user._id;
+    transfer.approvalDate = status === "approved" ? new Date() : null;
+
+    if (status === "approved") {
+      // تحديث الميزانية عند الموافقة على التحويل
+      const sourceBudget = await Budget.findOne({
+        administrativeUnit: transfer.sourceUnit._id,
+      });
+
+      if (!sourceBudget || sourceBudget.initialAmount < transfer.amount) {
+        return res
+          .status(400)
+          .json({ error: "Insufficient funds in the source unit's budget" });
+      }
+
+      // خصم المبلغ من ميزانية الوحدة المرسلة فقط
+      sourceBudget.initialAmount -= transfer.amount;
+      await sourceBudget.save();
+    }
+
+    await transfer.save();
+    res
+      .status(200)
+      .json({ message: "Transfer status updated successfully", transfer });
+  } catch (error) {
+    console.error("Error updating transfer status:", error);
+    res.status(500).json({ error: "Error updating transfer status" });
+  }
+};
+
+// Delete a transfer
 exports.deleteTransfer = async (req, res) => {
   try {
-    const { transferId } = req.params;
-    const deletedTransfer = await Transfer.findByIdAndDelete(transferId);
+    const { id } = req.params;
+    const deletedTransfer = await Transfer.findByIdAndDelete(id);
 
-    if (!deletedTransfer)
-      return res.status(404).json({ message: "Transfer not found" });
+    if (!deletedTransfer) {
+      return res.status(404).json({ error: "Transfer not found" });
+    }
 
     res.json({ message: "Transfer deleted successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error deleting transfer", error: error.message });
+    console.error("Error deleting transfer:", error);
+    res.status(500).json({ error: "Error deleting transfer" });
   }
 };

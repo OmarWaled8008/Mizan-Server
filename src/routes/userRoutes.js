@@ -4,6 +4,8 @@ const userController = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const validationMiddleware = require("../middlewares/validationMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware"); // Middleware for permission validation
+const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
+
 const { body } = require("express-validator");
 
 // Login user
@@ -21,6 +23,7 @@ router.post(
 router.post(
   "/",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["create_users"]), // التأكد من أن المستخدم عنده صلاحية إنشاء مستخدمين
   [
     body("name").notEmpty().withMessage("Name is required"),
@@ -38,6 +41,7 @@ router.post(
 router.get(
   "/",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["view_users"]), // التأكد من أن المستخدم عنده صلاحية عرض المستخدمين
   userController.getUsers
 );
@@ -46,6 +50,7 @@ router.get(
 router.get(
   "/:id",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["view_users"]), // التأكد من أن المستخدم عنده صلاحية عرض مستخدم معين
   userController.getUserById
 );
@@ -54,6 +59,7 @@ router.get(
 router.put(
   "/:id",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["edit_users"]), // التأكد من أن المستخدم عنده صلاحية تعديل المستخدمين
   [
     body("name").optional().notEmpty().withMessage("Name cannot be empty"),
@@ -67,6 +73,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["delete_users"]), // التأكد من أن المستخدم عنده صلاحية حذف المستخدمين
   userController.deleteUser
 );

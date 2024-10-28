@@ -3,12 +3,15 @@ const router = express.Router();
 const roleController = require("../controllers/roleController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware");
+const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
+
 const { body } = require("express-validator");
 
 // Create a new role
 router.post(
   "/",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["create_roles"]),
   [
     body("name")
@@ -24,6 +27,7 @@ router.post(
 router.get(
   "/",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["view_roles"]),
   roleController.getAllRoles
 );
@@ -32,6 +36,7 @@ router.get(
 router.get(
   "/:id",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["view_roles"]),
   roleController.getRoleById
 );
@@ -40,6 +45,7 @@ router.get(
 router.put(
   "/:id",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["edit_roles"]),
   [
     body("name")
@@ -56,6 +62,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["delete_roles"]),
   roleController.deleteRole
 );

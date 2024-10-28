@@ -1,58 +1,62 @@
-// src/routes/transferRoutes.js
 const express = require("express");
 const router = express.Router();
 const transferController = require("../controllers/TransferController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware");
+const loggingMiddleware = require("../middlewares/loggingMiddleware");
+const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
 const { body } = require("express-validator");
 
-// Routes for transfer management
+// Get all transfers
+router.get(
+  "/all",
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["view_transfers"]),
+  loggingMiddleware,
+  transferController.getAllTransfers
+);
 
 // Create a new transfer
 router.post(
-  "/",
+  "/create",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["create_transfers"]),
+  loggingMiddleware,
   [
     body("sourceUnit").notEmpty().withMessage("Source unit is required"),
     body("destinationUnit")
       .notEmpty()
       .withMessage("Destination unit is required"),
-    body("amount")
-      .isFloat({ min: 0 })
-      .withMessage("Amount must be a positive number"),
-    body("date").isISO8601().withMessage("Valid date is required"),
+    body("amount").isNumeric().withMessage("Amount must be a number"),
+    body("date").isISO8601().withMessage("Date must be in a valid format"),
   ],
   transferController.createTransfer
 );
 
-// Get all transfers
-router.get(
-  "/",
-  authMiddleware,
-  permissionMiddleware(["view_transfers"]),
-  transferController.getTransfers
-);
-
-// Update a transfer by ID
+// Update transfer status (approve/reject)
 router.put(
-  "/:transferId",
+  "/update/:id",
   authMiddleware,
-  permissionMiddleware(["edit_transfers"]),
+  auditLogMiddleware,
+  permissionMiddleware(["approve_transfers"]),
+  loggingMiddleware,
   [
-    body("amount")
-      .optional()
-      .isFloat({ min: 0 })
-      .withMessage("Amount must be a positive number"),
+    body("status")
+      .isIn(["approved", "rejected"])
+      .withMessage("Status must be either 'approved' or 'rejected'"),
   ],
-  transferController.updateTransfer
+  transferController.updateTransferStatus
 );
 
-// Delete a transfer by ID
+// Delete a transfer
 router.delete(
-  "/:transferId",
+  "/delete/:id",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["delete_transfers"]),
+  loggingMiddleware,
   transferController.deleteTransfer
 );
 

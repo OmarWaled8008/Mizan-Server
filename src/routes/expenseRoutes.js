@@ -4,53 +4,59 @@ const router = express.Router();
 const expenseController = require("../controllers/ExpenseController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware");
+const loggingMiddleware = require("../middlewares/loggingMiddleware");
+const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
+
 const { body } = require("express-validator");
 
-// Routes for expense management
+// Get all expenses
+router.get(
+  "/all",
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["view_expenses"]),
+  loggingMiddleware,
+  expenseController.getExpenses
+);
 
 // Create a new expense
 router.post(
-  "/",
+  "/create",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["create_expenses"]),
+  loggingMiddleware,
   [
-    body("title").notEmpty().withMessage("Expense title is required"),
-    body("amount")
-      .isFloat({ min: 0 })
-      .withMessage("Amount must be a positive number"),
-    body("date").isISO8601().withMessage("Valid date is required"),
-    body("cycle").notEmpty().withMessage("Cycle is required"),
+    body("title").notEmpty().withMessage("Title is required"),
+    body("amount").isNumeric().withMessage("Amount must be a number"),
+    body("date").isISO8601().withMessage("Date must be in a valid format"),
   ],
   expenseController.createExpense
 );
 
-// Get all expenses
-router.get(
-  "/",
-  authMiddleware,
-  permissionMiddleware(["view_expenses"]),
-  expenseController.getExpenses
-);
-
-// Update an expense by ID
+// Update an expense
 router.put(
-  "/:expenseId",
+  "/update/:expenseId",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["edit_expenses"]),
+  loggingMiddleware,
   [
     body("amount")
       .optional()
-      .isFloat({ min: 0 })
-      .withMessage("Amount must be a positive number"),
+      .isNumeric()
+      .withMessage("Amount must be a number"),
   ],
   expenseController.updateExpense
 );
 
-// Delete an expense by ID
+// Delete an expense
 router.delete(
-  "/:expenseId",
+  "/delete/:expenseId",
   authMiddleware,
+  auditLogMiddleware,
   permissionMiddleware(["delete_expenses"]),
+  loggingMiddleware,
   expenseController.deleteExpense
 );
 

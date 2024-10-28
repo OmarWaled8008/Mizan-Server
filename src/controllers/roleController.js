@@ -1,4 +1,6 @@
+// src/controllers/RoleController.js
 const Role = require("../models/Role");
+const Notification = require("../models/Notification"); // استيراد موديل الإشعارات
 const { validationResult } = require("express-validator");
 
 // Get all roles
@@ -48,6 +50,16 @@ exports.createRole = async (req, res) => {
 
     const newRole = new Role({ name });
     await newRole.save();
+
+    // إنشاء إشعار عند إضافة دور جديد
+    const notification = new Notification({
+      user: req.user._id,
+      message: `New role "${name}" has been created.`,
+      type: "Role",
+      referenceId: newRole._id,
+    });
+    await notification.save();
+
     res
       .status(201)
       .json({ message: "Role created successfully", role: newRole });
@@ -78,6 +90,15 @@ exports.updateRole = async (req, res) => {
 
     if (!updatedRole) return res.status(404).json({ error: "Role not found" });
 
+    // إنشاء إشعار عند تحديث الدور
+    const notification = new Notification({
+      user: req.user._id,
+      message: `Role "${updatedRole.name}" has been updated.`,
+      type: "Role",
+      referenceId: updatedRole._id,
+    });
+    await notification.save();
+
     res
       .status(200)
       .json({ message: "Role updated successfully", role: updatedRole });
@@ -96,6 +117,15 @@ exports.deleteRole = async (req, res) => {
     const deletedRole = await Role.findByIdAndDelete(id);
 
     if (!deletedRole) return res.status(404).json({ error: "Role not found" });
+
+    // إنشاء إشعار عند حذف الدور
+    const notification = new Notification({
+      user: req.user._id,
+      message: `Role "${deletedRole.name}" has been deleted.`,
+      type: "Role",
+      referenceId: deletedRole._id,
+    });
+    await notification.save();
 
     res.status(200).json({ message: "Role deleted successfully" });
   } catch (error) {

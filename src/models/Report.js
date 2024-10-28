@@ -1,12 +1,18 @@
+// src/models/Report.js
 const mongoose = require("mongoose");
 
 const reportSchema = new mongoose.Schema(
   {
-    reportName: { type: String, required: true },
-    type: { type: String, required: true },
-    date: { type: Date, required: true },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    fileUrl: { type: String },
+    title: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ["budget", "expense", "transfer", "administrative", "all"],
+      required: true,
+    },
+    filters: { type: Object }, // لتخزين الفلاتر المستخدمة للتقرير
+    generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    data: { type: Array, required: true }, // لتخزين البيانات المولدة من التقرير
+    createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

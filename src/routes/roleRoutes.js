@@ -28,7 +28,7 @@ router.get(
   "/",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["view_roles"]),
+  // permissionMiddleware(["view_roles"]),
   roleController.getAllRoles
 );
 

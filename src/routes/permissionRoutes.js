@@ -11,7 +11,7 @@ const permissionMiddleware = require("../middlewares/permissionMiddleware");
 router.get(
   "/",
   authMiddleware, 
-  permissionMiddleware(["view_permissions"]), 
+  // permissionMiddleware(["view_permissions"]), 
   permissionController.getAllPermissions 
 );
 

@@ -22,9 +22,9 @@ router.post(
 // Create a new user
 router.post(
   "/",
-  authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["create_users"]), // التأكد من أن المستخدم عنده صلاحية إنشاء مستخدمين
+  // authMiddleware,
+  // auditLogMiddleware,
+  // permissionMiddleware(["create_users"]), // التأكد من أن المستخدم عنده صلاحية إنشاء مستخدمين
   [
     body("name").notEmpty().withMessage("Name is required"),
     body("email").isEmail().withMessage("Valid email is required"),

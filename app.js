@@ -19,7 +19,7 @@ const budgetRoutes = require("./src/routes/budgetRoutes");
 const cycleRoutes = require("./src/routes/cycleRoutes");
 const expenseRoutes = require("./src/routes/expenseRoutes");
 const transferRoutes = require("./src/routes/transferRoutes");
-// const reportRoutes = require("./src/routes/reportRoutes");
+const reportRoutes = require("./src/routes/reportRoutes");
 const budgetRequestRoutes = require("./src/routes/budgetRequestRoutes");
 
 // Create Express app
@@ -48,7 +48,7 @@ app.use("/api/v1/budgets/requests", budgetRequestRoutes);
 app.use("/api/v1/cycles", cycleRoutes);
 app.use("/api/v1/expenses", expenseRoutes);
 app.use("/api/v1/transfers", transferRoutes);
-// app.use("/api/v1/reports", reportRoutes);
+app.use("/api/v1/reports", reportRoutes);
 
 // Fallback route for handling non-existent endpoints
 app.use(notFoundMiddleware);

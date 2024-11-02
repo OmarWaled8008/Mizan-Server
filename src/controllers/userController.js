@@ -1,12 +1,34 @@
 const User = require("../models/User");
 const Role = require("../models/Role");
 const Permission = require("../models/Permission");
-const Notification = require("../models/Notification"); // استيراد موديل الإشعارات
+const Notification = require("../models/Notification");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret";
+
+// Function to create token
+const createToken = (user) => {
+  return jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
+    expiresIn: "1h",
+  });
+};
+
+// Function to create notification
+const createNotification = async (userId, message, type, referenceId) => {
+  try {
+    const notification = new Notification({
+      user: userId,
+      message,
+      type,
+      referenceId,
+    });
+    await notification.save();
+  } catch (error) {
+    console.error("Notification error:", error);
+  }
+};
 
 // Login Controller
 const login = async (req, res) => {
@@ -18,10 +40,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
+    const token = createToken(user);
     res.json({ token });
   } catch (error) {
     console.error("Login error:", error);
@@ -29,10 +48,9 @@ const login = async (req, res) => {
   }
 };
 
-// Create User Controller
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role, customPermissions } = req.body;
+    const { name, email, password, role, customPermissions = [] } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -43,14 +61,28 @@ const createUser = async (req, res) => {
       return res.status(400).json({ error: "Role not found" });
     }
 
+    if (customPermissions && !Array.isArray(customPermissions)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid customPermissions format" });
+    }
+
     const permissionsDocs = await Permission.find({
       _id: { $in: customPermissions },
     });
+    const foundPermissionIds = permissionsDocs.map((perm) =>
+      perm._id.toString()
+    );
+    const missingPermissions = customPermissions.filter(
+      (id) => !foundPermissionIds.includes(id)
+    );
 
-    if (permissionsDocs.length !== customPermissions.length) {
-      return res
-        .status(400)
-        .json({ error: "One or more permissions not found" });
+    if (missingPermissions.length > 0) {
+      return res.status(400).json({
+        error: `One or more permissions not found: ${missingPermissions.join(
+          ", "
+        )}`,
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -59,27 +91,24 @@ const createUser = async (req, res) => {
       email,
       password: hashedPassword,
       role: foundRole._id,
-      customPermissions,
+      customPermissions: customPermissions,
     });
     await user.save();
 
-    // إنشاء إشعار عند إضافة مستخدم جديد
-    const notification = new Notification({
-      user: req.user ? req.user._id : user._id,
-      message: `New user "${name}" has been created.`,
-      type: "User", // تأكد أن هذه القيمة تتوافق مع القيم في الـ schema
-      referenceId: user._id,
-    });
-    await notification.save();
+    await createNotification(
+      req.user ? req.user._id : user._id,
+      `New user "${name}" has been created.`,
+      "User",
+      user._id
+    );
 
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
+    const token = createToken(user);
     res.status(201).json({ message: "User created successfully", token });
   } catch (error) {
-    console.error("Create user error:", error.message);
-    res.status(500).json({ error: "Error creating user" });
+    console.error("Create user error:", error);
+    res
+      .status(500)
+      .json({ error: "Error creating user", details: error.message });
   }
 };
 
@@ -114,7 +143,6 @@ const updateUser = async (req, res) => {
           .status(400)
           .json({ error: "One or more permissions not found" });
       }
-
       updateData.customPermissions = customPermissions;
     }
 
@@ -126,14 +154,12 @@ const updateUser = async (req, res) => {
 
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
 
-    // إنشاء إشعار عند تحديث المستخدم
-    const notification = new Notification({
-      user: req.user._id,
-      message: `User "${updatedUser.name}" has been updated.`,
-      type: "User",
-      referenceId: updatedUser._id,
-    });
-    await notification.save();
+    await createNotification(
+      req.user._id,
+      `User "${updatedUser.name}" has been updated.`,
+      "User",
+      updatedUser._id
+    );
 
     res.json({ message: "User updated successfully", updatedUser });
   } catch (error) {
@@ -150,14 +176,12 @@ const deleteUser = async (req, res) => {
 
     if (!deletedUser) return res.status(404).json({ error: "User not found" });
 
-    // إنشاء إشعار عند حذف المستخدم
-    const notification = new Notification({
-      user: req.user._id,
-      message: `User "${deletedUser.name}" has been deleted.`,
-      type: "User",
-      referenceId: deletedUser._id,
-    });
-    await notification.save();
+    await createNotification(
+      req.user._id,
+      `User "${deletedUser.name}" has been deleted.`,
+      "User",
+      deletedUser._id
+    );
 
     res.json({ message: "User deleted successfully" });
   } catch (error) {

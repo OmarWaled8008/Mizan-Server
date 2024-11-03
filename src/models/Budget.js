@@ -1,3 +1,4 @@
+// models/Budget.js
 const mongoose = require("mongoose");
 
 const budgetSchema = new mongoose.Schema(
@@ -5,7 +6,7 @@ const budgetSchema = new mongoose.Schema(
     administrativeUnit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "AdministrativeUnit",
-      required: true,
+      required: true, // Make sure every budget belongs to an administrative unit
     },
     fiscalYear: { type: String, required: true },
     initialAmount: { type: Number, required: true },

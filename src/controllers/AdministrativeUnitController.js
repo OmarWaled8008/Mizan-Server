@@ -1,11 +1,14 @@
 // src/controllers/AdministrativeUnitController.js
 const AdministrativeUnit = require("../models/AdministrativeUnit");
-const Notification = require("../models/Notification"); // استيراد موديل الإشعارات
+const Notification = require("../models/Notification");
 
-// عرض جميع الوحدات الإدارية
+// Retrieve all administrative units
 exports.getUnits = async (req, res) => {
   try {
-    const units = await AdministrativeUnit.find().populate("parentUnit");
+    const units = await AdministrativeUnit.find()
+      .populate("parentUnit")
+      .populate("subUnits")
+      .populate("manager");
     res.status(200).json(units);
   } catch (error) {
     res.status(500).json({
@@ -15,24 +18,17 @@ exports.getUnits = async (req, res) => {
   }
 };
 
+// Create a new administrative unit
 exports.createUnit = async (req, res) => {
   try {
-    const { name, parentUnit, description } = req.body;
+    const { name, parentUnit, description, manager } = req.body;
 
+    let parent = null;
     if (parentUnit) {
-      const parent = await AdministrativeUnit.findById(parentUnit);
+      parent = await AdministrativeUnit.findById(parentUnit);
       if (!parent) {
         return res.status(404).json({ message: "Parent unit not found" });
       }
-
-      // تحقق من أن الوحدة الجديدة ليست نفسها الوحدة الأبوية
-      if (parent._id.equals(req.body._id)) {
-        return res
-          .status(400)
-          .json({ message: "Unit cannot be its own parent" });
-      }
-
-      // تحقق من حالة الوحدة الأبوية
       if (parent.status === "inactive") {
         return res
           .status(400)
@@ -40,10 +36,19 @@ exports.createUnit = async (req, res) => {
       }
     }
 
-    const newUnit = new AdministrativeUnit({ name, parentUnit, description });
+    const newUnit = new AdministrativeUnit({
+      name,
+      parentUnit,
+      description,
+      manager,
+    });
     await newUnit.save();
 
-    // إنشاء إشعار
+    if (parentUnit) {
+      parent.subUnits.addToSet(newUnit._id);
+      await parent.save();
+    }
+
     const notification = new Notification({
       user: req.user._id,
       message: `New administrative unit "${name}" has been created.`,
@@ -64,43 +69,56 @@ exports.createUnit = async (req, res) => {
   }
 };
 
-// تحديث وحدة إدارية
+// Update an administrative unit
 exports.updateUnit = async (req, res) => {
   try {
     const { unitId } = req.params;
     const { parentUnit, ...updates } = req.body;
+
+    const unit = await AdministrativeUnit.findById(unitId);
+    if (!unit) return res.status(404).json({ message: "Unit not found" });
 
     if (parentUnit) {
       const parent = await AdministrativeUnit.findById(parentUnit);
       if (!parent) {
         return res.status(404).json({ message: "Parent unit not found" });
       }
-
       if (parent._id.equals(unitId)) {
         return res
           .status(400)
           .json({ message: "Unit cannot be its own parent" });
       }
-
       if (parent.status === "inactive") {
-        return res
-          .status(400)
-          .json({ message: "Cannot assign an inactive unit as a parent" });
+        return res.status(400).json({
+          message: "Cannot assign an inactive unit as a parent",
+        });
       }
 
+      if (!unit.parentUnit || !unit.parentUnit.equals(parentUnit)) {
+        if (unit.parentUnit) {
+          await AdministrativeUnit.findByIdAndUpdate(unit.parentUnit, {
+            $pull: { subUnits: unit._id },
+          });
+        }
+        parent.subUnits.addToSet(unit._id);
+        await parent.save();
+      }
       updates.parentUnit = parentUnit;
+    } else {
+      if (unit.parentUnit) {
+        await AdministrativeUnit.findByIdAndUpdate(unit.parentUnit, {
+          $pull: { subUnits: unit._id },
+        });
+      }
+      updates.parentUnit = null;
     }
 
     const updatedUnit = await AdministrativeUnit.findByIdAndUpdate(
       unitId,
       updates,
       { new: true }
-    ).populate("parentUnit");
+    ).populate("parentUnit subUnits manager");
 
-    if (!updatedUnit)
-      return res.status(404).json({ message: "Unit not found" });
-
-    // إنشاء إشعار عند تحديث الوحدة الإدارية
     const notification = new Notification({
       user: req.user._id,
       message: `Administrative unit "${updatedUnit.name}" has been updated.`,
@@ -121,21 +139,33 @@ exports.updateUnit = async (req, res) => {
   }
 };
 
-// حذف وحدة إدارية
+// Delete an administrative unit
 exports.deleteUnit = async (req, res) => {
   try {
     const { unitId } = req.params;
-    const deletedUnit = await AdministrativeUnit.findByIdAndDelete(unitId);
 
-    if (!deletedUnit)
-      return res.status(404).json({ message: "Unit not found" });
+    const unit = await AdministrativeUnit.findById(unitId);
+    if (!unit) return res.status(404).json({ message: "Unit not found" });
 
-    // إنشاء إشعار عند حذف الوحدة الإدارية
+    if (unit.subUnits.length > 0) {
+      return res.status(400).json({
+        message: "Cannot delete unit with sub-units; remove them first",
+      });
+    }
+
+    if (unit.parentUnit) {
+      await AdministrativeUnit.findByIdAndUpdate(unit.parentUnit, {
+        $pull: { subUnits: unit._id },
+      });
+    }
+
+    await unit.remove();
+
     const notification = new Notification({
       user: req.user._id,
-      message: `Administrative unit "${deletedUnit.name}" has been deleted.`,
+      message: `Administrative unit "${unit.name}" has been deleted.`,
       type: "AdministrativeUnit",
-      referenceId: deletedUnit._id,
+      referenceId: unit._id,
     });
     await notification.save();
 

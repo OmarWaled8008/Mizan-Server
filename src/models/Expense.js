@@ -17,6 +17,11 @@ const expenseSchema = new mongoose.Schema(
       ref: "Budget",
       required: true,
     },
+    administrativeUnit: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AdministrativeUnit",
+      required: true, // Ensures every expense belongs to an administrative unit
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

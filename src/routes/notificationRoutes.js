@@ -9,7 +9,6 @@ const permissionMiddleware = require("../middlewares/permissionMiddleware");
 router.get(
   "/",
   authMiddleware,
-  permissionMiddleware(["view_notifications"]),
   notificationController.getUserNotifications
 );
 
@@ -17,7 +16,6 @@ router.get(
 router.put(
   "/read/:notificationId",
   authMiddleware,
-  permissionMiddleware(["view_notifications"]),
   notificationController.markAsRead
 );
 

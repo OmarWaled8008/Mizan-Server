@@ -124,6 +124,7 @@ const permissions = [
     description: "مراقبة النظام وصحته",
     category: "system",
   },
+  { name: "admin", description: "يملك كافة الصلاحيات", category: "system" },
 ];
 
 mongoose

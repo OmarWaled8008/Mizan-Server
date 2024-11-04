@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const validationMiddleware = require("../middlewares/validationMiddleware");
-const permissionMiddleware = require("../middlewares/permissionMiddleware"); // Middleware for permission validation
+const permissionMiddleware = require("../middlewares/permissionMiddleware");
 const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
 
 const { body } = require("express-validator");
@@ -22,9 +22,9 @@ router.post(
 // Create a new user
 router.post(
   "/",
-  // authMiddleware,
-  // auditLogMiddleware,
-  // permissionMiddleware(["create_users"]), // التأكد من أن المستخدم عنده صلاحية إنشاء مستخدمين
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["user_create"]), // التأكد من أن المستخدم عنده صلاحية إنشاء مستخدمين
   [
     body("name").notEmpty().withMessage("Name is required"),
     body("email").isEmail().withMessage("Valid email is required"),
@@ -42,7 +42,7 @@ router.get(
   "/",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["view_users"]), // التأكد من أن المستخدم عنده صلاحية عرض المستخدمين
+  permissionMiddleware(["user_view"]), // التأكد من أن المستخدم عنده صلاحية عرض المستخدمين
   userController.getUsers
 );
 
@@ -51,7 +51,7 @@ router.get(
   "/:id",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["view_users"]), // التأكد من أن المستخدم عنده صلاحية عرض مستخدم معين
+  permissionMiddleware(["user_view"]), // التأكد من أن المستخدم عنده صلاحية عرض مستخدم معين
   userController.getUserById
 );
 
@@ -60,7 +60,7 @@ router.put(
   "/:id",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["edit_users"]), // التأكد من أن المستخدم عنده صلاحية تعديل المستخدمين
+  permissionMiddleware(["user_edit"]), // التأكد من أن المستخدم عنده صلاحية تعديل المستخدمين
   [
     body("name").optional().notEmpty().withMessage("Name cannot be empty"),
     body("email").optional().isEmail().withMessage("Valid email is required"),
@@ -74,7 +74,7 @@ router.delete(
   "/:id",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["delete_users"]), // التأكد من أن المستخدم عنده صلاحية حذف المستخدمين
+  permissionMiddleware(["user_delete"]), // التأكد من أن المستخدم عنده صلاحية حذف المستخدمين
   userController.deleteUser
 );
 

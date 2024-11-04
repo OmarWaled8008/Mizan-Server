@@ -1,4 +1,3 @@
-// src/routes/expenseRoutes.js
 const express = require("express");
 const router = express.Router();
 const expenseController = require("../controllers/ExpenseController");
@@ -14,7 +13,7 @@ router.get(
   "/all",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["view_expenses"]),
+  permissionMiddleware(["expense_view"]), // Updated permission to match the new structure
   loggingMiddleware,
   expenseController.getExpenses
 );
@@ -24,12 +23,15 @@ router.post(
   "/create",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["create_expenses"]),
+  permissionMiddleware(["expense_create"]), // Updated permission to match the new structure
   loggingMiddleware,
   [
     body("title").notEmpty().withMessage("Title is required"),
     body("amount").isNumeric().withMessage("Amount must be a number"),
     body("date").isISO8601().withMessage("Date must be in a valid format"),
+    body("administrativeUnit")
+      .notEmpty()
+      .withMessage("Administrative Unit is required"),
   ],
   expenseController.createExpense
 );
@@ -39,7 +41,7 @@ router.put(
   "/update/:expenseId",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["edit_expenses"]),
+  permissionMiddleware(["expense_edit"]), // Updated permission to match the new structure
   loggingMiddleware,
   [
     body("amount")
@@ -55,7 +57,7 @@ router.delete(
   "/delete/:expenseId",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["delete_expenses"]),
+  permissionMiddleware(["expense_delete"]), // Updated permission to match the new structure
   loggingMiddleware,
   expenseController.deleteExpense
 );

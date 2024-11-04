@@ -12,7 +12,7 @@ router.post(
   "/",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["create_roles"]),
+  permissionMiddleware(["role_create"]), // تأكد من أن المستخدم لديه صلاحية إنشاء الأدوار
   [
     body("name")
       .notEmpty()
@@ -28,7 +28,7 @@ router.get(
   "/",
   authMiddleware,
   auditLogMiddleware,
-  // permissionMiddleware(["view_roles"]),
+  permissionMiddleware(["role_view"]), // تأكد من أن المستخدم لديه صلاحية عرض الأدوار
   roleController.getAllRoles
 );
 
@@ -37,7 +37,7 @@ router.get(
   "/:id",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["view_roles"]),
+  permissionMiddleware(["role_view"]), // تأكد من أن المستخدم لديه صلاحية عرض دور معين
   roleController.getRoleById
 );
 
@@ -46,7 +46,7 @@ router.put(
   "/:id",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["edit_roles"]),
+  permissionMiddleware(["role_edit"]), // تأكد من أن المستخدم لديه صلاحية تعديل الأدوار
   [
     body("name")
       .optional()
@@ -63,7 +63,7 @@ router.delete(
   "/:id",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["delete_roles"]),
+  permissionMiddleware(["role_delete"]), // تأكد من أن المستخدم لديه صلاحية حذف الأدوار
   roleController.deleteRole
 );
 

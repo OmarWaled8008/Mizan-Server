@@ -1,4 +1,3 @@
-// src/routes/administrativeUnitRoutes.js
 const express = require("express");
 const router = express.Router();
 const adminUnitController = require("../controllers/AdministrativeUnitController");
@@ -13,7 +12,7 @@ router.get(
   "/all",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["view_administrative_units"]),
+  permissionMiddleware(["administrative_unit_view"]), // Updated permission
   loggingMiddleware,
   adminUnitController.getUnits
 );
@@ -23,7 +22,7 @@ router.post(
   "/create",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["create_administrative_units"]),
+  permissionMiddleware(["administrative_unit_create"]), // Updated permission
   loggingMiddleware,
   [
     body("name").notEmpty().withMessage("Name is required"),
@@ -45,7 +44,7 @@ router.put(
   "/update/:unitId",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["edit_administrative_units"]),
+  permissionMiddleware(["administrative_unit_edit"]), // Updated permission
   loggingMiddleware,
   [
     param("unitId").isMongoId().withMessage("Invalid unit ID"),
@@ -68,7 +67,7 @@ router.delete(
   "/delete/:unitId",
   authMiddleware,
   auditLogMiddleware,
-  permissionMiddleware(["delete_administrative_units"]),
+  permissionMiddleware(["administrative_unit_delete"]), // Updated permission
   loggingMiddleware,
   [param("unitId").isMongoId().withMessage("Invalid unit ID")],
   adminUnitController.deleteUnit

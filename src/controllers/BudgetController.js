@@ -1,14 +1,34 @@
-// src/controllers/budgetController.js
 const Budget = require("../models/Budget");
+const Expense = require("../models/Expense");
 const AdministrativeUnit = require("../models/AdministrativeUnit");
-const Notification = require("../models/Notification"); // استيراد موديل الإشعارات
-const { validationResult } = require("express-validator");
+const Notification = require("../models/Notification");
+const mongoose = require("mongoose");
 
-// Get all budgets
+const getTotalSpentAmount = async (budgetId) => {
+  const result = await Expense.aggregate([
+    { $match: { budget: new mongoose.Types.ObjectId(budgetId) } },
+    { $group: { _id: null, totalSpent: { $sum: "$amount" } } },
+  ]);
+  return result[0] ? result[0].totalSpent : 0;
+};
+
 exports.getAllBudgets = async (req, res) => {
   try {
     const budgets = await Budget.find().populate("administrativeUnit");
-    res.status(200).json(budgets);
+
+    const budgetsWithRemaining = await Promise.all(
+      budgets.map(async (budget) => {
+        const totalSpent = await getTotalSpentAmount(budget._id);
+        const remainingBudget = budget.initialAmount - totalSpent;
+        return {
+          ...budget.toObject(),
+          totalSpent,
+          remainingBudget,
+        };
+      })
+    );
+
+    res.status(200).json(budgetsWithRemaining);
   } catch (error) {
     console.error("Error fetching budgets:", error);
     res.status(500).json({ error: "Error fetching budgets" });
@@ -61,7 +81,7 @@ exports.createBudget = async (req, res) => {
 exports.updateBudget = async (req, res) => {
   try {
     const { id } = req.params;
-    const { initialAmount, spentAmount, description } = req.body;
+    const { initialAmount, description } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -69,7 +89,7 @@ exports.updateBudget = async (req, res) => {
 
     const updatedBudget = await Budget.findByIdAndUpdate(
       id,
-      { initialAmount, spentAmount, description },
+      { initialAmount, description },
       { new: true }
     ).populate("administrativeUnit");
 

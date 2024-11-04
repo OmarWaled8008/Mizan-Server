@@ -3,21 +3,30 @@ const AuditLog = require("../models/AuditLog");
 
 const createAuditLog = async (req, res, next) => {
   try {
-    const userId = req.user ? req.user._id : null; // التأكد إن المستخدم موجود
+    const userId = req.user ? req.user._id : null;
+    const targetId = req.params.id || null;
+    const action = req.method;
+    const target = req.baseUrl;
+
+    // صياغة التفاصيل بطريقة واضحة ومفهومة
+    const details = `المستخدم ${req.user.name} (ID: ${userId}) قام بـ ${action} على ${target}`;
 
     const auditData = {
-      action: req.method,
+      action,
       user: userId,
-      target: req.baseUrl,
-      targetId: req.params.id || null,
-      details: `User ${userId} performed ${req.method} on ${req.baseUrl}`,
+      target,
+      targetId,
+      details,
     };
 
+    console.log("Audit log data:", auditData); // Log the audit data
+
     await AuditLog.create(auditData);
+    console.log("Audit log created successfully"); // Log success
     next();
   } catch (error) {
     console.error("Error logging audit event:", error);
-    next(); // نكمل رغم وجود الخطأ لضمان عدم تعطيل النظام
+    next();
   }
 };
 

@@ -1,20 +1,33 @@
-// src/models/Report.js
 const mongoose = require("mongoose");
 
-const reportSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true },
-    type: {
-      type: String,
-      enum: ["budget", "expense", "transfer", "administrative", "all"],
-      required: true,
-    },
-    filters: { type: Object }, // لتخزين الفلاتر المستخدمة للتقرير
-    generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    data: { type: Array, required: true }, // لتخزين البيانات المولدة من التقرير
-    createdAt: { type: Date, default: Date.now },
+const reportSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
   },
-  { timestamps: true }
-);
+  type: {
+    type: String,
+    enum: ["budget", "expense", "transfer", "administrative", "all"], // أنواع التقارير المتاحة
+    required: true,
+  },
+  filters: {
+    type: Object,
+    default: {}, // معايير البحث اللي المستخدم يحددها
+  },
+  data: {
+    type: Array,
+    default: [], // البيانات اللي هتظهر في التقرير
+  },
+  generatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 module.exports = mongoose.model("Report", reportSchema);

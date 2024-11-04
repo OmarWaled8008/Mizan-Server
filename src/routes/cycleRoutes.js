@@ -10,8 +10,9 @@ const { body } = require("express-validator");
 // Get all cycles
 router.get(
   "/all",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["view_cycles"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["cycle_view"]), // Updated permission
   loggingMiddleware,
   cycleController.getCycles
 );
@@ -19,8 +20,9 @@ router.get(
 // Create a new cycle
 router.post(
   "/create",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["create_cycles"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["cycle_create"]), // Updated permission
   loggingMiddleware,
   [
     body("name").notEmpty().withMessage("Name is required"),
@@ -36,8 +38,9 @@ router.post(
 // Update a cycle
 router.put(
   "/update/:cycleId",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["edit_cycles"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["cycle_edit"]), // Updated permission
   loggingMiddleware,
   [
     body("startDate")
@@ -55,8 +58,9 @@ router.put(
 // Delete a cycle
 router.delete(
   "/delete/:cycleId",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["delete_cycles"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["cycle_delete"]), // Updated permission
   loggingMiddleware,
   cycleController.deleteCycle
 );

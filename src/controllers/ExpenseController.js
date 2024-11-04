@@ -1,63 +1,76 @@
-// src/controllers/ExpenseController.js
 const Expense = require("../models/Expense");
 const Budget = require("../models/Budget");
 const Cycle = require("../models/Cycle");
-const Notification = require("../models/Notification"); // استيراد موديل الإشعارات
+const Notification = require("../models/Notification");
+
+// دالة لتحديد دورة افتراضية حسب التاريخ الحالي
+const getDefaultCycle = async () => {
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+
+  let cycle = await Cycle.findOne({
+    startDate: { $lte: today },
+    endDate: { $gte: today },
+  });
+
+  if (!cycle) {
+    cycle = new Cycle({
+      title: `دورة ${currentMonth}-${currentYear}`,
+      startDate: new Date(currentYear, currentMonth - 1, 1),
+      endDate: new Date(currentYear, currentMonth, 0),
+      description: `الدورة الافتراضية لشهر ${currentMonth} سنة ${currentYear}`,
+    });
+    await cycle.save();
+
+    const notification = new Notification({
+      message: `تم إنشاء دورة جديدة لشهر ${currentMonth} سنة ${currentYear}.`,
+      type: "Cycle",
+      referenceId: cycle._id,
+    });
+    await notification.save();
+  }
+
+  return cycle._id;
+};
 
 exports.createExpense = async (req, res) => {
   try {
-    const { title, amount, date, category, cycle, budget, description } =
-      req.body;
-
-    // التحقق من أن الـ budget موجود
-    const foundBudget = await Budget.findById(budget);
-    if (!foundBudget) {
-      return res.status(404).json({ message: "Budget not found" });
-    }
-
-    // التحقق من أن الـ cycle موجود
-    const foundCycle = await Cycle.findById(cycle);
-    if (!foundCycle) {
-      return res.status(404).json({ message: "Cycle not found" });
-    }
-
-    // استخدام الـ user ID من الـ token كـ createdBy
-    const createdBy = req.user._id;
-
-    // التحقق من المصروفات الحالية المرتبطة بالميزانية
-    const totalExpenses = await Expense.aggregate([
-      { $match: { budget: foundBudget._id } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]);
-
-    const currentExpenses =
-      totalExpenses.length > 0 ? totalExpenses[0].total : 0;
-    const remainingBudget = foundBudget.initialAmount - currentExpenses;
-
-    // التحقق إذا كان المصروف الجديد يتجاوز الميزانية المتاحة
-    if (amount > remainingBudget) {
-      return res.status(400).json({
-        message: "Expense amount exceeds the available budget",
-        availableBudget: remainingBudget,
-      });
-    }
-
-    const newExpense = new Expense({
+    const {
       title,
       amount,
       date,
       category,
       cycle,
       budget,
+      administrativeUnit,
+      description,
+    } = req.body;
+
+    const foundBudget = await Budget.findById(budget);
+    if (!foundBudget) {
+      return res.status(404).json({ message: "Budget not found" });
+    }
+
+    const cycleId = cycle || (await getDefaultCycle());
+    const createdBy = req.user._id;
+
+    const newExpense = new Expense({
+      title,
+      amount,
+      date,
+      category,
+      cycle: cycleId,
+      budget,
+      administrativeUnit,
       description,
       createdBy,
     });
     await newExpense.save();
 
-    // إنشاء إشعار عند إضافة مصروف جديد
     const notification = new Notification({
       user: req.user._id,
-      message: `A new expense titled "${title}" has been created with an amount of ${amount}.`,
+      message: `تم إنشاء مصروف بعنوان "${title}" بمبلغ ${amount}.`,
       type: "Expense",
       referenceId: newExpense._id,
     });

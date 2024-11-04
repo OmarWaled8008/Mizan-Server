@@ -1,4 +1,3 @@
-// src/routes/budgetRequestRoutes.js
 const express = require("express");
 const router = express.Router();
 const budgetRequestController = require("../controllers/budgetRequestController");
@@ -11,37 +10,102 @@ const { body } = require("express-validator");
 // Get all budget requests
 router.get(
   "/all",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["view_budget_requests"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_request_view"]), // Updated permission
   loggingMiddleware,
   budgetRequestController.getAllBudgetRequests
+);
+
+// Get a single budget request by ID
+router.get(
+  "/:id",
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_request_view"]), // Updated permission
+  loggingMiddleware,
+  budgetRequestController.getBudgetRequestById
 );
 
 // Create a new budget request
 router.post(
   "/create",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["create_budget_requests"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_request_create"]), // Updated permission
   loggingMiddleware,
   [
-    body("budget").notEmpty().withMessage("Budget ID is required"),
-    body("amount").isNumeric().withMessage("Amount must be a number"),
+    body("fiscalYear").notEmpty().withMessage("Fiscal year is required"),
+    body("initialAmount")
+      .isNumeric()
+      .withMessage("Initial amount must be a number"),
+    body("description")
+      .optional()
+      .isString()
+      .withMessage("Description must be a string"),
+    body("administrativeUnit")
+      .notEmpty()
+      .withMessage("Administrative unit is required"),
   ],
   budgetRequestController.createBudgetRequest
 );
 
-// Approve or reject a budget request
+// Update a budget request
 router.put(
   "/update/:id",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["approve_budget_requests"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_request_edit"]), // Updated permission
   loggingMiddleware,
   [
-    body("status")
-      .isIn(["approved", "rejected"])
-      .withMessage("Status must be either 'approved' or 'rejected'"),
+    body("fiscalYear")
+      .optional()
+      .notEmpty()
+      .withMessage("Fiscal year is required"),
+    body("initialAmount")
+      .optional()
+      .isNumeric()
+      .withMessage("Initial amount must be a number"),
+    body("description")
+      .optional()
+      .isString()
+      .withMessage("Description must be a string"),
+    body("administrativeUnit")
+      .optional()
+      .notEmpty()
+      .withMessage("Administrative unit is required"),
   ],
-  budgetRequestController.updateBudgetRequestStatus
+  budgetRequestController.updateBudgetRequest
+);
+
+// Approve a budget request
+router.put(
+  "/approve/:id",
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_request_approve"]), // Updated permission
+  loggingMiddleware,
+  budgetRequestController.approveBudgetRequest
+);
+
+// Reject a budget request
+router.put(
+  "/reject/:id",
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_request_approve"]), // Updated permission
+  loggingMiddleware,
+  budgetRequestController.rejectBudgetRequest
+);
+
+// Delete a budget request
+router.delete(
+  "/delete/:id",
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_request_delete"]), // Updated permission
+  loggingMiddleware,
+  budgetRequestController.deleteBudgetRequest
 );
 
 module.exports = router;

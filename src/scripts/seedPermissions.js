@@ -4,202 +4,126 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-// القائمة المعدلة للصلاحيات
 const permissions = [
-  // صلاحيات المستخدمين
+  // صلاحيات عامة للمستخدمين
+  { name: "user_view", description: "عرض قائمة المستخدمين", category: "user" },
+  { name: "user_create", description: "إنشاء مستخدم جديد", category: "user" },
   {
-    name: "view_users",
-    description: "عرض قائمة بجميع المستخدمين",
-    category: "user",
-  },
-  { name: "create_users", description: "إنشاء مستخدمين جدد", category: "user" },
-  {
-    name: "edit_users",
+    name: "user_edit",
     description: "تعديل تفاصيل المستخدمين",
     category: "user",
   },
-  { name: "delete_users", description: "حذف المستخدمين", category: "user" },
-  {
-    name: "assign_roles",
-    description: "تعيين الأدوار للمستخدمين",
-    category: "user",
-  },
-  {
-    name: "manage_permissions",
-    description: "إدارة الصلاحيات للمستخدمين والأدوار",
-    category: "user",
-  },
+  { name: "user_delete", description: "حذف المستخدمين", category: "user" },
 
-  // صلاحيات الأدوار
-  { name: "view_roles", description: "عرض جميع الأدوار", category: "role" },
-  { name: "create_roles", description: "إنشاء أدوار جديدة", category: "role" },
-  { name: "edit_roles", description: "تعديل تفاصيل الأدوار", category: "role" },
-  { name: "delete_roles", description: "حذف الأدوار", category: "role" },
+  // صلاحيات عامة للأدوار
+  { name: "role_view", description: "عرض قائمة الأدوار", category: "role" },
+  { name: "role_create", description: "إنشاء دور جديد", category: "role" },
+  { name: "role_edit", description: "تعديل تفاصيل الأدوار", category: "role" },
+  { name: "role_delete", description: "حذف الأدوار", category: "role" },
 
-  // صلاحيات الصلاحيات (Permissions)
+  // صلاحيات إدارة الصلاحيات
   {
-    name: "view_permissions",
+    name: "permission_view",
     description: "عرض جميع الصلاحيات",
     category: "permission",
   },
   {
-    name: "assign_permissions",
+    name: "permission_assign",
     description: "تعيين الصلاحيات للأدوار",
     category: "permission",
   },
 
-  // صلاحيات التقارير
-  {
-    name: "view_reports",
-    description: "الوصول إلى التقارير وعرضها",
-    category: "report",
-  },
-  {
-    name: "generate_reports",
-    description: "إنشاء تقارير جديدة",
-    category: "report",
-  },
-  { name: "edit_reports", description: "تعديل التقارير", category: "report" },
-  { name: "delete_reports", description: "حذف التقارير", category: "report" },
-  {
-    name: "export_reports",
-    description: "تصدير التقارير وتنزيلها بصيغة CSV",
-    category: "report",
-  },
-  {
-    name: "view_all_reports",
-    description: "مشاهدة جميع التقارير النظامية",
-    category: "report",
-  },
-  {
-    name: "view_department_reports",
-    description: "مشاهدة التقارير الخاصة بالأقسام",
-    category: "report",
-  },
-  {
-    name: "view_financial_reports",
-    description: "مشاهدة التقارير المالية مثل المصروفات والميزانيات",
-    category: "report",
-  },
-  {
-    name: "view_overview_reports",
-    description: "مشاهدة التقارير الشاملة التي تغطي كل النظام",
-    category: "report",
-  },
-
   // صلاحيات الميزانيات
-  { name: "view_budgets", description: "عرض الميزانيات", category: "budget" },
+  { name: "budget_view", description: "عرض الميزانيات", category: "budget" },
   {
-    name: "create_budgets",
-    description: "إنشاء ميزانيات جديدة",
+    name: "budget_create",
+    description: "إنشاء ميزانية جديدة",
     category: "budget",
   },
   {
-    name: "edit_budgets",
-    description: "تعديل تفاصيل الميزانيات",
+    name: "budget_edit",
+    description: "تعديل تفاصيل الميزانية",
     category: "budget",
   },
-  { name: "delete_budgets", description: "حذف الميزانيات", category: "budget" },
+  { name: "budget_delete", description: "حذف الميزانية", category: "budget" },
   {
-    name: "approve_budgets",
-    description: "الموافقة على أو رفض الميزانيات",
+    name: "budget_approve",
+    description: "الموافقة على الميزانية",
     category: "budget",
   },
 
   // صلاحيات المصروفات
-  { name: "view_expenses", description: "عرض المصروفات", category: "expense" },
+  { name: "expense_view", description: "عرض المصروفات", category: "expense" },
   {
-    name: "create_expenses",
-    description: "إنشاء مصروفات جديدة",
+    name: "expense_create",
+    description: "إضافة مصروفات جديدة",
     category: "expense",
   },
   {
-    name: "edit_expenses",
+    name: "expense_edit",
     description: "تعديل تفاصيل المصروفات",
     category: "expense",
   },
-  {
-    name: "delete_expenses",
-    description: "حذف المصروفات",
-    category: "expense",
-  },
+  { name: "expense_delete", description: "حذف المصروفات", category: "expense" },
 
-  // صلاحيات التحويلات
+  // صلاحيات التقارير
+  { name: "report_view", description: "عرض التقارير", category: "report" },
   {
-    name: "view_transfers",
-    description: "عرض التحويلات",
-    category: "transfer",
+    name: "report_create",
+    description: "إنشاء تقرير جديد",
+    category: "report",
   },
+  { name: "report_edit", description: "تعديل التقارير", category: "report" },
+  { name: "report_delete", description: "حذف التقارير", category: "report" },
   {
-    name: "create_transfers",
-    description: "إنشاء تحويلات جديدة",
-    category: "transfer",
-  },
-  {
-    name: "approve_transfers",
-    description: "الموافقة على أو رفض التحويلات",
-    category: "transfer",
-  },
-  {
-    name: "edit_transfers",
-    description: "تعديل تفاصيل التحويلات",
-    category: "transfer",
-  },
-  {
-    name: "delete_transfers",
-    description: "حذف التحويلات",
-    category: "transfer",
+    name: "report_export",
+    description: "تصدير التقارير بصيغة CSV",
+    category: "report",
   },
 
   // صلاحيات الوحدات الإدارية
   {
-    name: "view_administrative_units",
+    name: "administrative_unit_view",
     description: "عرض الوحدات الإدارية",
     category: "administrative_unit",
   },
   {
-    name: "create_administrative_units",
-    description: "إنشاء وحدات إدارية جديدة",
+    name: "administrative_unit_create",
+    description: "إنشاء وحدة إدارية جديدة",
     category: "administrative_unit",
   },
   {
-    name: "edit_administrative_units",
+    name: "administrative_unit_edit",
     description: "تعديل تفاصيل الوحدات الإدارية",
     category: "administrative_unit",
   },
   {
-    name: "delete_administrative_units",
+    name: "administrative_unit_delete",
     description: "حذف الوحدات الإدارية",
     category: "administrative_unit",
   },
 
-  // صلاحيات النظام
+  // صلاحيات النظام العامة
   {
-    name: "manage_settings",
+    name: "system_settings",
     description: "الوصول إلى إعدادات النظام وتعديلها",
     category: "system",
   },
   {
-    name: "manage_notifications",
-    description: "إدارة الإشعارات النظامية",
-    category: "system",
-  },
-  {
-    name: "view_logs",
+    name: "system_logs",
     description: "عرض سجلات النظام للتدقيق",
     category: "system",
   },
   {
-    name: "manage_backup",
-    description: "إدارة النسخ الاحتياطية للنظام واستعادتها",
+    name: "system_backup",
+    description: "إدارة النسخ الاحتياطية واستعادتها",
     category: "system",
   },
   {
-    name: "monitor_system",
-    description: "مراقبة حالة وصحة النظام",
+    name: "system_monitor",
+    description: "مراقبة النظام وصحته",
     category: "system",
   },
-  { name: "admin", description: "يملك كافة الصلاحيات", category: "system" },
 ];
 
 mongoose

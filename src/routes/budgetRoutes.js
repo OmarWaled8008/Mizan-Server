@@ -1,4 +1,3 @@
-// src/routes/budgetRoutes.js
 const express = require("express");
 const router = express.Router();
 const budgetController = require("../controllers/BudgetController");
@@ -11,8 +10,9 @@ const { body } = require("express-validator");
 // Get all budgets
 router.get(
   "/all",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["view_budgets"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_view"]), // Updated permission
   loggingMiddleware,
   budgetController.getAllBudgets
 );
@@ -20,8 +20,9 @@ router.get(
 // Create a new budget
 router.post(
   "/create",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["create_budgets"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_create"]), // Updated permission
   loggingMiddleware,
   [
     body("administrativeUnit")
@@ -38,8 +39,9 @@ router.post(
 // Update a budget
 router.put(
   "/update/:id",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["edit_budgets"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_edit"]), // Updated permission
   loggingMiddleware,
   [
     body("initialAmount")
@@ -53,8 +55,9 @@ router.put(
 // Delete a budget
 router.delete(
   "/delete/:id",
-  authMiddleware,auditLogMiddleware,
-  permissionMiddleware(["delete_budgets"]),
+  authMiddleware,
+  auditLogMiddleware,
+  permissionMiddleware(["budget_delete"]), // Updated permission
   loggingMiddleware,
   budgetController.deleteBudget
 );

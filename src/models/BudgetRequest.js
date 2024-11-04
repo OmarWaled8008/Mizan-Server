@@ -1,26 +1,27 @@
+// src/models/BudgetRequest.js
 const mongoose = require("mongoose");
 
 const budgetRequestSchema = new mongoose.Schema(
   {
-    budget: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Budget",
-      required: true,
-    },
-    amount: { type: Number, required: true },
+    fiscalYear: { type: String, required: true },
+    initialAmount: { type: Number, required: true },
+    approvedAmount: { type: Number, default: 0 },
     description: { type: String, required: true },
-    requestedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    approvalDate: { type: Date },
+    requestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    administrativeUnit: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AdministrativeUnit",
+      required: true,
+    },
   },
   { timestamps: true }
 );

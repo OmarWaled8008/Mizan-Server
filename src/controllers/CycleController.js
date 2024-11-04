@@ -6,10 +6,33 @@ exports.createCycle = async (req, res) => {
   try {
     const { name, startDate, endDate, budget, description } = req.body;
 
-    // التحقق من وجود الـ budget
+    // التحقق من صحة التواريخ
+    if (new Date(startDate) >= new Date(endDate)) {
+      return res
+        .status(400)
+        .json({ message: "End date must be after start date" });
+    }
+
+    // التحقق من وجود الميزانية
     const foundBudget = await Budget.findById(budget);
     if (!foundBudget) {
       return res.status(404).json({ message: "Budget not found" });
+    }
+
+    // التحقق من عدم وجود دورة متداخلة لنفس الميزانية
+    const overlappingCycle = await Cycle.findOne({
+      budget,
+      $or: [
+        { startDate: { $lte: endDate, $gte: startDate } },
+        { endDate: { $lte: endDate, $gte: startDate } },
+        { startDate: { $lte: startDate }, endDate: { $gte: endDate } },
+      ],
+    });
+
+    if (overlappingCycle) {
+      return res
+        .status(400)
+        .json({ message: "Overlapping cycle exists for this budget" });
     }
 
     const newCycle = new Cycle({
@@ -47,9 +70,16 @@ exports.getCycles = async (req, res) => {
 exports.updateCycle = async (req, res) => {
   try {
     const { cycleId } = req.params;
-    const { budget, ...updates } = req.body;
+    const { budget, startDate, endDate, ...updates } = req.body;
 
-    // التحقق من وجود الـ budget إذا كانت موجودة في التحديث
+    // التحقق من صحة التواريخ
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      return res
+        .status(400)
+        .json({ message: "End date must be after start date" });
+    }
+
+    // التحقق من وجود الميزانية إذا كانت موجودة في التحديث
     if (budget) {
       const foundBudget = await Budget.findById(budget);
       if (!foundBudget) {
@@ -58,9 +88,13 @@ exports.updateCycle = async (req, res) => {
       updates.budget = budget;
     }
 
-    const updatedCycle = await Cycle.findByIdAndUpdate(cycleId, updates, {
-      new: true,
-    }).populate("budget");
+    const updatedCycle = await Cycle.findByIdAndUpdate(
+      cycleId,
+      { ...updates, startDate, endDate },
+      {
+        new: true,
+      }
+    ).populate("budget");
 
     if (!updatedCycle) {
       return res.status(404).json({ message: "Cycle not found" });

@@ -3,6 +3,7 @@ const Expense = require("../models/Expense");
 const AdministrativeUnit = require("../models/AdministrativeUnit");
 const Notification = require("../models/Notification");
 const mongoose = require("mongoose");
+const { validationResult } = require("express-validator");
 
 const getTotalSpentAmount = async (budgetId) => {
   const result = await Expense.aggregate([

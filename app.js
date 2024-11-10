@@ -11,6 +11,7 @@ const errorMiddleware = require("./src/middlewares/errorMiddleware");
 
 // Import routes
 const userRoutes = require("./src/routes/userRoutes");
+const adminRoutes = require("./src/routes/adminRoutes");
 const roleRoutes = require("./src/routes/roleRoutes");
 const permissionRoutes = require("./src/routes/permissionRoutes");
 const notificationRoutes = require("./src/routes/notificationRoutes");
@@ -40,17 +41,10 @@ app.use(rateLimiter);
 
 // Set up routes
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/roles", roleRoutes);
 app.use("/api/v1/permissions", permissionRoutes);
-app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/administrative-units", administrativeUnitRoutes);
-app.use("/api/v1/budgets", budgetRoutes);
-app.use("/api/v1/budgets/requests", budgetRequestRoutes);
-app.use("/api/v1/cycles", cycleRoutes);
-app.use("/api/v1/expenses", expenseRoutes);
-app.use("/api/v1/transfers", transferRoutes);
-app.use("/api/v1/reports", reportRoutes);
-app.use("/api/v1/historical-records", historicalRecordRoutes);
 
 // Fallback route for handling non-existent endpoints
 app.use(notFoundMiddleware);

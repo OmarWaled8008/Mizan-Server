@@ -5,126 +5,118 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const permissions = [
-  // صلاحيات عامة للمستخدمين
-  { name: "user_view", description: "عرض قائمة المستخدمين", category: "user" },
-  { name: "user_create", description: "إنشاء مستخدم جديد", category: "user" },
   {
-    name: "user_edit",
-    description: "تعديل تفاصيل المستخدمين",
-    category: "user",
+    name: "صلاحية إضافة مستخدم جديد",
+    description: "من تمنح له الصلاحية فقط",
+    category: "general",
   },
-  { name: "user_delete", description: "حذف المستخدمين", category: "user" },
+  {
+    name: "صلاحية إضافة ميزانية عامة",
+    description: "يمكنه كتابة الرقم الأساسي فقط",
+    category: "general",
+  },
+  {
+    name: "صلاحية مصروفات",
+    description: "يكتب فيها المصروفات ويرفق التقرير وليس الزامي",
+    category: "general",
+  },
+  {
+    name: "صلاحية توزيع ميزانيات للقطاعات مع إضافة المبلغ الاحتياطي",
+    description:
+      "يتم فيها توزيع الميزانيه على القطاعات أو الإدارات ويتم خصمها من المبلغ الأساسي ويتم بعد ذلك اعتماداها بعدة اعتمادات يتم وضعها من مسئول النظام حسب مدير الوحدة بحيث ان المبلغ الاحتياطي يتم كتابته بجانب المبلغ الموزع ويؤخذ من ميزانية القطاع نفسه المثبته ولا يظهر لمسئول القطاع ابدا هذا المبلغ",
+    category: "general",
+  },
+  {
+    name: "صلاحية حذف أو تعديل ميزانية",
+    description: "ولها سلسلة اعتمتدات",
+    category: "general",
+  },
+  {
+    name: "صلاحية اتاحية المبلغ الاحتياطي",
+    description:
+      "يتم فيها اتاحية المبلغ الاحتياطي للقطاع ومن ثم يتم توزيع من قبل مسئول القطاع",
+    category: "general",
+  },
+  {
+    name: "صلاحيات عرض ميزانيات عامه",
+    description: "No description available",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض مصروفات عامة",
+    description: "No description available",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض ميزانيات مع التقارير عام",
+    description: "تظهر له جميع الميزانيات لمن في الهيكل التنظيمي",
+    category: "general",
+  },
+  {
+    name: "عرض مصروفات مع التقارير عام",
+    description: "تظهر له جميع المصروفات لمن في الهيكل التنظيمي",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض ميزانيات لعدد من الوحدات",
+    description: "يتم عرض الميزانيه حسب الوحدات المحدده له من قبل الادمن",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض مصروفات لعدد من الوحدات",
+    description: "يمتم عرض المصروفات حسب الوحدات المحدده له من قبل الادمن",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض ميزانية لعدد من الوحدات",
+    description: "يتم عرض الميزانيه لعدد من الوحدات",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض مصروفات لعدد من الوحدات",
+    description: "يتم عرض الميزانيه لعدد من الوحدات",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض الميزانية الخاصة بالوحدات الإدارية الخاصه به او التابعه لها",
+    description: "No description available",
+    category: "general",
+  },
+  {
+    name: "صلاحية عرض المصروفات بالوحدات الإدارية الخاصه به او التابعه له",
+    description: "No description available",
+    category: "general",
+  },
+  {
+    name: "صلاحية إضافة وحدة إدارية على الهيكل التنظيمي",
+    description: "No description available",
+    category: "general",
+  },
+  {
+    name: "طلب مناقلة",
+    description:
+      "يتم إضافة هذه الصلاحية بحيث يتم كتابة الرقم المطلوب نقله وإظهار كذلك الوحدة الإدارية المرغوب النقل اليها وتظهر هذه الاشعارات له ومن هم في سلسلة الاعتمادات سواء على النظام او عن طريق الايميل",
+    category: "general",
+  },
+  {
+    name: "طلب الغاء وحدة إدارية",
+    description:
+      "يتم اظهار الوحدات الإدارية المرغوب نقلها له التابعه له فقط مع ملاحظة لو كان هنالك مبلغ يتم مطالبته بنقل المبلغ",
+    category: "general",
+  },
+  {
+    name: "طلب ميزانية",
+    description:
+      "يتم اتاحة الطلب عند الحاجه بمنحه الصلاحية ويحدد فيه المبلغ المطلوب دعمه به",
+    category: "general",
+  },
+  {
+    name: "طلب إضافة وحدة إدارية جديده",
+    description:
+      "يتم منحه إصلاحية حسب الحاجه ويكتب فيها اسم الوحدة الإدارية لتضمينها في الهيكل التنظيمي",
+    category: "general",
+  },
 
-  // صلاحيات عامة للأدوار
-  { name: "role_view", description: "عرض قائمة الأدوار", category: "role" },
-  { name: "role_create", description: "إنشاء دور جديد", category: "role" },
-  { name: "role_edit", description: "تعديل تفاصيل الأدوار", category: "role" },
-  { name: "role_delete", description: "حذف الأدوار", category: "role" },
-
-  // صلاحيات إدارة الصلاحيات
-  {
-    name: "permission_view",
-    description: "عرض جميع الصلاحيات",
-    category: "permission",
-  },
-  {
-    name: "permission_assign",
-    description: "تعيين الصلاحيات للأدوار",
-    category: "permission",
-  },
-
-  // صلاحيات الميزانيات
-  { name: "budget_view", description: "عرض الميزانيات", category: "budget" },
-  {
-    name: "budget_create",
-    description: "إنشاء ميزانية جديدة",
-    category: "budget",
-  },
-  {
-    name: "budget_edit",
-    description: "تعديل تفاصيل الميزانية",
-    category: "budget",
-  },
-  { name: "budget_delete", description: "حذف الميزانية", category: "budget" },
-  {
-    name: "budget_approve",
-    description: "الموافقة على الميزانية",
-    category: "budget",
-  },
-
-  // صلاحيات المصروفات
-  { name: "expense_view", description: "عرض المصروفات", category: "expense" },
-  {
-    name: "expense_create",
-    description: "إضافة مصروفات جديدة",
-    category: "expense",
-  },
-  {
-    name: "expense_edit",
-    description: "تعديل تفاصيل المصروفات",
-    category: "expense",
-  },
-  { name: "expense_delete", description: "حذف المصروفات", category: "expense" },
-
-  // صلاحيات التقارير
-  { name: "report_view", description: "عرض التقارير", category: "report" },
-  {
-    name: "report_create",
-    description: "إنشاء تقرير جديد",
-    category: "report",
-  },
-  { name: "report_edit", description: "تعديل التقارير", category: "report" },
-  { name: "report_delete", description: "حذف التقارير", category: "report" },
-  {
-    name: "report_export",
-    description: "تصدير التقارير بصيغة CSV",
-    category: "report",
-  },
-
-  // صلاحيات الوحدات الإدارية
-  {
-    name: "administrative_unit_view",
-    description: "عرض الوحدات الإدارية",
-    category: "administrative_unit",
-  },
-  {
-    name: "administrative_unit_create",
-    description: "إنشاء وحدة إدارية جديدة",
-    category: "administrative_unit",
-  },
-  {
-    name: "administrative_unit_edit",
-    description: "تعديل تفاصيل الوحدات الإدارية",
-    category: "administrative_unit",
-  },
-  {
-    name: "administrative_unit_delete",
-    description: "حذف الوحدات الإدارية",
-    category: "administrative_unit",
-  },
-
-  // صلاحيات النظام العامة
-  {
-    name: "system_settings",
-    description: "الوصول إلى إعدادات النظام وتعديلها",
-    category: "system",
-  },
-  {
-    name: "system_logs",
-    description: "عرض سجلات النظام للتدقيق",
-    category: "system",
-  },
-  {
-    name: "system_backup",
-    description: "إدارة النسخ الاحتياطية واستعادتها",
-    category: "system",
-  },
-  {
-    name: "system_monitor",
-    description: "مراقبة النظام وصحته",
-    category: "system",
-  },
-  { name: "admin", description: "يملك كافة الصلاحيات", category: "system" },
 ];
 
 mongoose

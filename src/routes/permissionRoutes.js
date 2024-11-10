@@ -1,20 +1,10 @@
-// src/routes/permissionRoutes.js
 const express = require("express");
 const router = express.Router();
-const permissionController = require("../controllers/permissionController");
+const { getPermissions } = require("../controllers/permissionController");
 const authMiddleware = require("../middlewares/authMiddleware");
-const permissionMiddleware = require("../middlewares/permissionMiddleware");
-const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
+const checkAdminAccess = require("../middlewares/checkAdminAccess"); // Middleware للتحقق من أن المستخدم هو Admin
 
-// Routes for permission management
-
-// Get all permissions
-router.get(
-  "/",
-  authMiddleware,
-  auditLogMiddleware,
-  // permissionMiddleware(["view_permissions"]),
-  permissionController.getAllPermissions
-);
+// مسار جلب جميع الصلاحيات
+router.get("/", authMiddleware, checkAdminAccess, getPermissions);
 
 module.exports = router;

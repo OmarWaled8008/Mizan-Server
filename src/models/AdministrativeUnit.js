@@ -15,8 +15,9 @@ const administrativeUnitSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "AdministrativeUnit",
+        default: [],
       },
-    ],
+    ], // إضافة حقل subUnits
 
     // Management and Status
     manager: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -35,52 +36,41 @@ const administrativeUnitSchema = new mongoose.Schema(
         ref: "Expense",
       },
     ],
-
-    // Access control
-    permissions: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Permission",
-      },
-    ],
   },
   { timestamps: true }
 );
 
-// Middleware for checking existence of parent unit and updating subUnits in parent
+// Middleware for verifying parent unit existence
 administrativeUnitSchema.pre("save", async function (next) {
   if (this.parentUnit) {
-    // Check if the specified parent unit exists
     const parentUnit = await this.model("AdministrativeUnit").findById(
       this.parentUnit
     );
     if (!parentUnit) {
       return next(new Error("Parent unit does not exist"));
     }
-
-    // Add this unit to the subUnits array of the parent unit
-    parentUnit.subUnits.addToSet(this._id); // `addToSet` avoids duplicates
+    // إضافة الوحدة الفرعية في parentUnit
+    parentUnit.subUnits.addToSet(this._id);
     await parentUnit.save();
   }
   next();
 });
 
-// Middleware for updating the hierarchy on deletion
+// Middleware for updating hierarchy on deletion
 administrativeUnitSchema.pre("remove", async function (next) {
+  // Remove reference to this unit from its parent unit if exists
   if (this.parentUnit) {
-    // Remove this unit from the subUnits array of the parent unit
     await this.model("AdministrativeUnit").findByIdAndUpdate(this.parentUnit, {
       $pull: { subUnits: this._id },
     });
   }
 
-  // If this unit has subUnits, remove their reference to this unit
-  if (this.subUnits.length > 0) {
-    await this.model("AdministrativeUnit").updateMany(
-      { _id: { $in: this.subUnits } },
-      { parentUnit: null } // Unassign parent unit from sub-units
-    );
-  }
+  // Remove this unit as parent for its sub-units
+  await this.model("AdministrativeUnit").updateMany(
+    { parentUnit: this._id },
+    { parentUnit: null }
+  );
+
   next();
 });
 

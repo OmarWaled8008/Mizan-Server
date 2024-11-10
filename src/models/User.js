@@ -1,68 +1,46 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
-  customPermissions: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "Permission" },
-  ],
+  role: { type: String, default: "user" }, // User role field
+  permissions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }],
+  unit: { type: mongoose.Schema.Types.ObjectId, ref: "AdministrativeUnit" }, // User's primary unit
   createdAt: { type: Date, default: Date.now },
 });
 
-// Method for logging in users
-userSchema.statics.loginUser = async function (email, password) {
-  const user = await this.findOne({ email })
-    .populate({
-      path: "role",
-      populate: { path: "permissions" },
-    })
-    .populate("customPermissions");
-  if (!user) return null;
+// Method to manually set and hash the password
+userSchema.methods.setPassword = async function (password) {
+  this.password = await bcrypt.hash(password, 10); // Explicitly hash password
+};
+
+// Static login function
+userSchema.statics.login = async function (email, password) {
+  const user = await this.findOne({ email });
+  if (!user) {
+    throw new Error("Invalid email or password");
+  }
 
   const isMatch = await bcrypt.compare(password, user.password);
-  return isMatch ? user : null;
+  if (!isMatch) {
+    throw new Error("Invalid email or password");
+  }
+
+  return user;
 };
 
-// Method for creating a standard user
-userSchema.statics.createUser = async function (data) {
-  const existingUser = await this.findOne({ email: data.email });
-  if (existingUser) throw new Error("Email is already registered");
-
-  data.password = await bcrypt.hash(data.password, 10);
-  const user = new this(data);
-  return await user.save();
+// Method to compare entered password with stored hash
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
-userSchema.methods.getCombinedPermissions = async function () {
-  const populatedUser = await this.model("User")
-    .findById(this._id)
-    .populate({
-      path: "role",
-      populate: { path: "permissions" },
-    })
-    .populate("customPermissions");
-
-  const rolePermissions = populatedUser.role
-    ? populatedUser.role.permissions.map((p) => p.name)
-    : [];
-  const customPermissions = populatedUser.customPermissions.map((p) => p.name);
-
-  // دمج الصلاحيات في Set لتجنب التكرار
-  const combinedPermissions = new Set([
-    ...rolePermissions,
-    ...customPermissions,
-  ]);
-
-  return Array.from(combinedPermissions);
-};
-
-// Method to check if user has a specific permission by ObjectId
-userSchema.methods.hasPermission = async function (permissionId) {
-  const permissions = await this.getCombinedPermissions();
-  return permissions.includes(permissionId.toString());
+// Check if user has specific permission
+userSchema.methods.hasPermission = function (permissionId) {
+  return this.permissions.some(
+    (permission) => permission.toString() === permissionId.toString()
+  );
 };
 
 module.exports = mongoose.model("User", userSchema);

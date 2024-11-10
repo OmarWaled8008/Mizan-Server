@@ -1,53 +1,63 @@
 const User = require("../models/User");
+const Admin = require("../models/Admin");
 const Role = require("../models/Role");
 const Permission = require("../models/Permission");
 const Notification = require("../models/Notification");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs"); // Ensure bcryptjs is used consistently
 const { validationResult } = require("express-validator");
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret";
 
 // Function to create token
-const createToken = (user) => {
-  return jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-    expiresIn: "1d",
-  });
+const createToken = (user, isAdmin = false) => {
+  return jwt.sign(
+    { id: user._id, role: isAdmin ? "admin" : user.role },
+    JWT_SECRET,
+    { expiresIn: "1d" }
+  );
 };
 
-// Function to create notification
-const createNotification = async (userId, message, type, referenceId) => {
-  try {
-    const notification = new Notification({
-      user: userId,
-      message,
-      type,
-      referenceId,
-    });
-    await notification.save();
-  } catch (error) {
-    console.error("Notification error:", error);
-  }
-};
-
-// Login Controller
-const login = async (req, res) => {
+// Admin Login Controller
+const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.loginUser(email, password);
+    const admin = await Admin.login(email, password); // Using the static login function on Admin model
+    const token = createToken(admin, true);
 
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    const token = createToken(user);
-    res.json({ token });
+    res.json({
+      token,
+      admin: { _id: admin._id, name: admin.name, email: admin.email },
+    });
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ error: "Error logging in" });
+    console.error("Admin login error:", error);
+    res.status(401).json({ message: "Invalid email or password" });
   }
 };
 
+// User Login Controller
+const userLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.login(email, password); // Using the static login function on User model
+
+    const token = createToken(user);
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("User login error:", error);
+    res.status(401).json({ message: "Invalid email or password" });
+  }
+};
+
+// Create User Controller
 const createUser = async (req, res) => {
   try {
     const { name, email, password, role, customPermissions = [] } = req.body;
@@ -56,54 +66,44 @@ const createUser = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const foundRole = await Role.findOne({ name: role });
+    // Validate role
+    const foundRole = await Role.findById(role);
     if (!foundRole) {
       return res.status(400).json({ error: "Role not found" });
     }
 
-    if (customPermissions && !Array.isArray(customPermissions)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid customPermissions format" });
-    }
-
+    // Validate permissions
     const permissionsDocs = await Permission.find({
       _id: { $in: customPermissions },
     });
-    const foundPermissionIds = permissionsDocs.map((perm) =>
-      perm._id.toString()
-    );
-    const missingPermissions = customPermissions.filter(
-      (id) => !foundPermissionIds.includes(id)
-    );
-
-    if (missingPermissions.length > 0) {
-      return res.status(400).json({
-        error: `One or more permissions not found: ${missingPermissions.join(
-          ", "
-        )}`,
-      });
+    if (
+      customPermissions.length &&
+      permissionsDocs.length !== customPermissions.length
+    ) {
+      return res
+        .status(400)
+        .json({ error: "One or more permissions not found" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
       name,
       email,
-      password: hashedPassword,
       role: foundRole._id,
-      customPermissions: customPermissions,
+      permissions: customPermissions,
     });
+    await user.setPassword(password); // Explicitly set and hash the password
     await user.save();
 
-    await createNotification(
-      req.user ? req.user._id : user._id,
-      `New user "${name}" has been created.`,
-      "User",
-      user._id
-    );
-
-    const token = createToken(user);
-    res.status(201).json({ message: "User created successfully", token });
+    res.status(201).json({
+      message: "User created successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions,
+      },
+    });
   } catch (error) {
     console.error("Create user error:", error);
     res
@@ -112,22 +112,51 @@ const createUser = async (req, res) => {
   }
 };
 
+// Create Admin Controller by Admin
+const createAdminByAdmin = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const admin = new Admin({ name, email });
+    await admin.setPassword(password); // Explicitly set and hash the password
+    await admin.save();
+
+    const token = createToken(admin, true);
+    res.status(201).json({
+      message: "Admin created successfully",
+      token,
+      admin: { _id: admin._id, name: admin.name, email: admin.email },
+    });
+  } catch (error) {
+    console.error("Create admin error:", error);
+    res.status(500).json({ error: "Error creating admin" });
+  }
+};
+
+// Get All Admins Controller
+const getAllAdmins = async (req, res) => {
+  try {
+    const admins = await Admin.find().select("-password");
+    res.status(200).json(admins);
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    res.status(500).json({ error: "Error fetching admins" });
+  }
+};
+
 // Update User Controller
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, role, customPermissions } = req.body;
-    const errors = validationResult(req);
+    const updateData = { name, email };
 
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
     if (role) {
-      const foundRole = await Role.findOne({ name: role });
+      const foundRole = await Role.findById(role);
       if (!foundRole) {
         return res.status(400).json({ error: "Role not found" });
       }
@@ -143,7 +172,7 @@ const updateUser = async (req, res) => {
           .status(400)
           .json({ error: "One or more permissions not found" });
       }
-      updateData.customPermissions = customPermissions;
+      updateData.permissions = customPermissions;
     }
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, {
@@ -153,13 +182,6 @@ const updateUser = async (req, res) => {
       .populate("role");
 
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
-
-    await createNotification(
-      req.user._id,
-      `User "${updatedUser.name}" has been updated.`,
-      "User",
-      updatedUser._id
-    );
 
     res.json({ message: "User updated successfully", updatedUser });
   } catch (error) {
@@ -172,17 +194,12 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedUser = await User.findByIdAndDelete(id).select("-password");
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-    if (!deletedUser) return res.status(404).json({ error: "User not found" });
-
-    await createNotification(
-      req.user._id,
-      `User "${deletedUser.name}" has been deleted.`,
-      "User",
-      deletedUser._id
-    );
-
+    await user.remove();
     res.json({ message: "User deleted successfully" });
   } catch (error) {
     console.error("Delete user error:", error);
@@ -190,10 +207,10 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// Get all users
-const getUsers = async (req, res) => {
+// Get All Users Controller
+const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password").populate("role");
+    const users = await User.find().select("-password").populate("role"); // Exclude passwords and populate role field
     res.status(200).json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -201,27 +218,14 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Get single user by ID
-const getUserById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = await User.findById(id).select("-password").populate("role");
 
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    res.status(500).json({ error: "Error fetching user" });
-  }
-};
-
-// Export all functions
 module.exports = {
-  login,
+  getAllUsers,
+  adminLogin,
+  userLogin,
   createUser,
+  createAdminByAdmin,
+  getAllAdmins,
   updateUser,
   deleteUser,
-  getUsers,
-  getUserById,
 };

@@ -1,70 +1,24 @@
 const express = require("express");
 const router = express.Router();
-const roleController = require("../controllers/roleController");
+const {
+  createRole,
+  getRoles,
+  updateRole,
+  deleteRole,
+} = require("../controllers/roleController");
 const authMiddleware = require("../middlewares/authMiddleware");
-const permissionMiddleware = require("../middlewares/permissionMiddleware");
-const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
+const checkAdminAccess = require("../middlewares/checkAdminAccess"); // Middleware للتحقق من أن المستخدم هو Admin
 
-const { body } = require("express-validator");
+// مسار إنشاء دور جديد (للمسؤولين فقط)
+router.post("/", authMiddleware, checkAdminAccess, createRole);
 
-// Create a new role
-router.post(
-  "/",
-  authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["role_create"]), // تأكد من أن المستخدم لديه صلاحية إنشاء الأدوار
-  [
-    body("name")
-      .notEmpty()
-      .withMessage("Role name is required")
-      .isLength({ max: 50 })
-      .withMessage("Role name must be less than 50 characters"),
-  ],
-  roleController.createRole
-);
+// مسار جلب جميع الأدوار (للمسؤولين فقط)
+router.get("/", authMiddleware, checkAdminAccess, getRoles);
 
-// Get all roles
-router.get(
-  "/",
-  authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["role_view"]), // تأكد من أن المستخدم لديه صلاحية عرض الأدوار
-  roleController.getAllRoles
-);
+// مسار تحديث دور (للمسؤولين فقط)
+router.put("/:id", authMiddleware, checkAdminAccess, updateRole);
 
-// Get a single role by ID
-router.get(
-  "/:id",
-  authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["role_view"]), // تأكد من أن المستخدم لديه صلاحية عرض دور معين
-  roleController.getRoleById
-);
-
-// Update a role by ID
-router.put(
-  "/:id",
-  authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["role_edit"]), // تأكد من أن المستخدم لديه صلاحية تعديل الأدوار
-  [
-    body("name")
-      .optional()
-      .notEmpty()
-      .withMessage("Role name cannot be empty")
-      .isLength({ max: 50 })
-      .withMessage("Role name must be less than 50 characters"),
-  ],
-  roleController.updateRole
-);
-
-// Delete a role by ID
-router.delete(
-  "/:id",
-  authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["role_delete"]), // تأكد من أن المستخدم لديه صلاحية حذف الأدوار
-  roleController.deleteRole
-);
+// مسار حذف دور (للمسؤولين فقط)
+router.delete("/:id", authMiddleware, checkAdminAccess, deleteRole);
 
 module.exports = router;

@@ -1,65 +1,29 @@
 const express = require("express");
 const router = express.Router();
-const budgetController = require("../controllers/BudgetController");
-const authMiddleware = require("../middlewares/authMiddleware");
-const permissionMiddleware = require("../middlewares/permissionMiddleware");
-const loggingMiddleware = require("../middlewares/loggingMiddleware");
-const auditLogMiddleware = require("../middlewares/auditLogMiddleware");
-const { body } = require("express-validator");
+const centralBudgetController = require("../controllers/CentralBudgetController");
+const allocatedBudgetController = require("../controllers/AllocatedBudgetController");
+const authMiddleware = require("../middlewares/authMiddleware"); // تأكد من إضافة `authMiddleware`
+const checkPermission = require("../middlewares/permissionMiddleware");
 
-// Get all budgets
-router.get(
-  "/all",
-  authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["budget_view"]), // Updated permission
-  loggingMiddleware,
-  budgetController.getAllBudgets
-);
-
-// Create a new budget
 router.post(
-  "/create",
+  "/central",
   authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["budget_create"]), // Updated permission
-  loggingMiddleware,
-  [
-    body("administrativeUnit")
-      .notEmpty()
-      .withMessage("Administrative Unit is required"),
-    body("fiscalYear").notEmpty().withMessage("Fiscal Year is required"),
-    body("initialAmount")
-      .isNumeric()
-      .withMessage("Initial Amount must be a number"),
-  ],
-  budgetController.createBudget
+  checkPermission("صلاحية إضافة ميزانية عامة"),
+  centralBudgetController.createOrUpdateCentralBudget
 );
 
-// Update a budget
-router.put(
-  "/update/:id",
+router.post(
+  "/allocate",
   authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["budget_edit"]), // Updated permission
-  loggingMiddleware,
-  [
-    body("initialAmount")
-      .optional()
-      .isNumeric()
-      .withMessage("Initial Amount must be a number"),
-  ],
-  budgetController.updateBudget
+  checkPermission("صلاحية توزيع ميزانيات للقطاعات مع إضافة المبلغ الاحتياطي"),
+  centralBudgetController.allocateBudgetToUnit
 );
 
-// Delete a budget
-router.delete(
-  "/delete/:id",
+router.post(
+  "/update-allocated",
   authMiddleware,
-  auditLogMiddleware,
-  permissionMiddleware(["budget_delete"]), // Updated permission
-  loggingMiddleware,
-  budgetController.deleteBudget
+  checkPermission("صلاحية مصروفات"),
+  allocatedBudgetController.updateAllocatedBudget
 );
 
 module.exports = router;

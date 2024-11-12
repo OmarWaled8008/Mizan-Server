@@ -1,33 +1,20 @@
-// models/Expense.js
 const mongoose = require("mongoose");
 
 const expenseSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    amount: { type: Number, required: true },
-    date: { type: Date, required: true },
-    category: { type: String, required: true },
-    cycle: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Cycle",
-      required: true,
-    },
-    budget: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Budget",
-      required: true,
-    },
-    administrativeUnit: {
+    description: { type: String, required: true }, // وصف المصروف
+    amount: { type: Number, required: true }, // قيمة المصروف
+    unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "AdministrativeUnit",
-      required: true, // Ensures every expense belongs to an administrative unit
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
       required: true,
-    },
-    description: { type: String },
+    }, // الوحدة المعنية بالمصروف
+    budget: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AllocatedBudget",
+      required: true,
+    }, // الميزانية المخصصة التي تتعلق بالمصروف
+    date: { type: Date, default: Date.now }, // تاريخ المصروف
   },
   { timestamps: true }
 );
